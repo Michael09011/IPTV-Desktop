@@ -1,0 +1,35 @@
+{
+  "name": "iptv-desktop",
+  "version": "0.1.0",
+  "description": "Simple IPTV desktop app supporting JSON/M3U/M3U8 playlists",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^26.0.0",
+    "electron-builder": "^24.6.0"
+  },
+  "build": {
+    "appId": "com.example.iptv",
+    "productName": "IPTV-Desktop",
+    "mac": {
+      "target": ["dmg"],
+      "category": "public.app-category.video",
+      "icon": "build/icon.icns"
+    },
+    "icon": "build/icon.icns",
+    "files": [
+      "app/**/*",
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "asar": false
+  },
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --mac"
+  }
+}
+

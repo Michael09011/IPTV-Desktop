@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>IPTV Desktop</title>
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+    <style>
+      :root{
+        --bg:#0f1419; --card:#1a202c; --muted:#9ca3af; --primary:#6366f1; --accent:#1e293b; 
+        --text-primary:#f1f5f9; --text-muted:#cbd5e1; --border:#334155; --success:#10b981;
+      }
+      html,body{height:100%;margin:0;}
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background:var(--bg); color:var(--text-primary); }
+      header { padding:12px 20px; background:linear-gradient(90deg,#1a202cee,var(--bg)); display:flex; align-items:center; gap:12px; box-shadow:0 2px 8px rgba(0,0,0,0.3); border-bottom:1px solid var(--border); }
+      header h3{margin:0;font-size:18px;color:var(--text-primary);font-weight:600}
+      header .brand-icon{width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,var(--primary),#06b6d4);display:inline-block}
+      #root { display:grid; grid-template-columns:280px 1fr; gap:0; height:calc(100vh - 56px); }
+      .left-col { background:var(--card); border-right:1px solid var(--border); overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; }
+      .left-col input, .left-col select { background:#0f1419; border:1px solid var(--border); color:var(--text-primary); margin-bottom:4px; }
+      .left-col button { background:#334155; color:var(--text-primary); border:1px solid var(--border); }
+      .left-col button:hover { background:#475569; }
+      .left-col button.primary { background:var(--primary); border:none; }
+      /* Sidebar collapse button */
+      #sidebarToggle { position:absolute; left:12px; top:12px; width:32px; height:32px; padding:4px; background:#334155; border:none; color:var(--text-primary); border-radius:6px; cursor:pointer; z-index:100; }
+      #sidebarToggle:hover { background:#475569; }
+      .player { background:var(--bg); padding:12px; overflow-y:auto; }
+      .player video { border-radius:8px; background:#000; width:100%; height:calc(100vh - 140px); }
+      /* Playlist section titles */
+      .left-col strong { color:var(--text-primary); display:block; margin-top:8px; margin-bottom:6px; font-size:13px; text-transform:uppercase; letter-spacing:0.5px; }
+      /* channel list items - compact */
+      .channel { padding:8px; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:background 0.15s; }
+      .channel:hover { background:var(--accent); }
+      .channel img { width:40px; height:28px; object-fit:cover; border-radius:4px; background:#000; flex-shrink:0 }
+      .channel > div { flex:1; min-width:0; }
+      .channel .title{ font-size:13px; font-weight:600; color:var(--text-primary); }
+      .channel .meta{ font-size:11px; color:var(--text-muted) }
+      /* inputs & buttons */
+      button { padding:8px 12px; border-radius:6px; border:none; background:#334155; color:var(--text-primary); cursor:pointer; transition:all .15s ease; font-size:12px; font-weight:500; }
+      button.primary{ background:var(--primary); box-shadow:0 4px 12px rgba(99,102,241,0.2) }
+      button:hover:not(:disabled){ background:#475569; transform:translateY(-1px); }
+      button.primary:hover{ background:#5558e3; }
+      input, select { padding:8px 10px; border-radius:6px; border:1px solid var(--border); background:#0f1419; color:var(--text-primary); font-size:12px; }
+      input::placeholder { color:var(--text-muted); }
+      .drag-handle { padding:4px 6px; background:var(--accent); border-radius:4px; color:var(--text-muted); cursor:grab; user-select:none; }
+      .drag-handle:active { cursor:grabbing; }
+      .sortable-ghost { opacity: 0.5; }
+      #playerStatus { margin-top:8px; padding:8px 12px; border-radius:6px; background:var(--card); font-size:12px; }
+      #epg { margin-top:8px; padding:8px 12px; border-radius:6px; background:var(--card); font-size:11px; color:var(--text-muted); }
+      #toastContainer { right:16px; top:70px; }
+      /* Toast styling */
+      #toastContainer > div { background:#1a202c; color:var(--text-primary); padding:10px 14px; border-radius:6px; border-left:3px solid var(--primary); box-shadow:0 4px 12px rgba(0,0,0,0.4); margin-bottom:8px; }
+      /* Responsive - stack on small screens */
+      @media (max-width:768px){ 
+        #root { grid-template-columns:1fr; }
+        .left-col { max-height:40vh; border-right:none; border-bottom:1px solid var(--border); }
+        .player { min-height:60vh; }
+        .left-col { padding:8px; }
+      }
+      /* Scrollbar styling */
+      ::-webkit-scrollbar { width:6px; height:6px; }
+      ::-webkit-scrollbar-track { background:transparent; }
+      ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+      ::-webkit-scrollbar-thumb:hover { background:#475569; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="brand-icon" aria-hidden="true"></div>
+      <div style="flex:1"></div>
+      <button id="openBtn" class="primary">+ 플레이리스트 추가</button>
+    </header>
+    <div id="root"></div>
+    <script type="module" src="./renderer.js"></script>
+  </body>
+</html>
