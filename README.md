@@ -1,6 +1,7 @@
 # IPTV-Desktop
+<img width="1312" height="912" alt="스크린샷 2026-02-14 오후 4 12 04" src="https://github.com/user-attachments/assets/bd0aa4fc-184a-44e4-9b17-6417d20f8a5d" />
 
-간단한 설명
+
 - Electron 기반 IPTV 데스크탑 앱(플레이리스트 불러오기, 채널 재생, 백업 등).
 
 <!-- Shields: replace <OWNER>/<REPO> with your GitHub owner/repo if you host this on GitHub -->
