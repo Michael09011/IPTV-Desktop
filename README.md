@@ -79,6 +79,7 @@ window.electronAPI.authList().then(console.log);
 ## 시스템 요구사항
 
 - macOS 10.13 이상
+- WIN OS
 - Node.js 18+
 
 ## 저작권
