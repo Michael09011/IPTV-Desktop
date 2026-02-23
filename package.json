@@ -16,11 +16,18 @@
     "productName": "IPTV-Desktop",
     "win": {
       "target": [
+        "nsis",
         "portable"
       ],
       "icon": "build/icon.ico",
       "certificateFile": null,
       "certificatePassword": null
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     },
     "portable": {
       "artifactName": "${productName}-Portable.exe"

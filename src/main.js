@@ -1,7 +1,30 @@
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, Menu } = require('electron');
 const { session } = require('electron');
 const path = require('path');
 const fs = require('fs');
+
+// Settings file stored in userData
+const SETTINGS_FILE = path.join(app.getPath('userData'), 'settings.json');
+function loadSettingsSync() {
+  try {
+    if (fs.existsSync(SETTINGS_FILE)) {
+      return JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')) || {};
+    }
+  } catch (e) {}
+  return {};
+}
+function saveSettingsSync(s) {
+  try { fs.writeFileSync(SETTINGS_FILE, JSON.stringify(s, null, 2), 'utf8'); } catch (e) {}
+}
+
+// Read settings synchronously before app ready so we can apply GPU setting
+const _initialSettings = loadSettingsSync();
+try {
+  if (_initialSettings.disableHardwareAcceleration !== false) {
+    app.disableHardwareAcceleration();
+    app.commandLine.appendSwitch('disable-gpu');
+  }
+} catch (e) { /* ignore */ }
 
 const RULES_FILE = path.join(app.getPath('userData'), 'auth_rules.json');
 let authRules = [];
@@ -98,6 +121,24 @@ ipcMain.handle('playlists:openBackupDir', async () => {
   } catch (e) { return { ok: false, error: e.message }; }
 });
 
+// Settings IPC: get/set and restart
+ipcMain.handle('settings:get', async () => {
+  return loadSettingsSync();
+});
+ipcMain.handle('settings:set', async (event, obj) => {
+  const cur = loadSettingsSync();
+  const next = Object.assign({}, cur, obj || {});
+  saveSettingsSync(next);
+  return { ok: true };
+});
+ipcMain.handle('app:restart', async () => {
+  try {
+    app.relaunch();
+    app.exit(0);
+    return { ok: true };
+  } catch (e) { return { ok: false, error: e.message } }
+});
+
 // register webRequest header injection after app is ready
 function registerSessionHooks() {
   try {
@@ -132,6 +173,13 @@ function createWindow() {
       nodeIntegration: false
     }
   });
+
+  // hide native menu bar and remove application menu
+  try {
+    Menu.setApplicationMenu(null);
+    win.setMenuBarVisibility(false);
+    win.autoHideMenuBar = true;
+  } catch (e) {}
 
   win.loadFile(path.join(__dirname, '..', 'app', 'index.html'));
 }
@@ -333,5 +381,31 @@ ipcMain.handle('playlists:import', async (event) => {
     }));
     savePlaylists();
     return { ok: true };
+  } catch (e) { return { ok: false, error: e.message }; }
+});
+
+// Favorites file save/load handlers (renderer passes/receives JSON-serializable object)
+ipcMain.handle('favorites:saveFile', async (event, content) => {
+  try {
+    const { canceled, filePath } = await dialog.showSaveDialog({
+      title: '즐겨찾기 내보내기',
+      defaultPath: 'favorites.json',
+      filters: [{ name: 'JSON', extensions: ['json'] }]
+    });
+    if (canceled || !filePath) return { ok: false, canceled: true };
+    // content may be object or string
+    const data = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
+    await fs.promises.writeFile(filePath, data, 'utf8');
+    return { ok: true, path: filePath };
+  } catch (e) { return { ok: false, error: e.message }; }
+});
+
+ipcMain.handle('favorites:loadFile', async (event) => {
+  try {
+    const res = await dialog.showOpenDialog({ title: '즐겨찾기 가져오기', properties: ['openFile'], filters: [{ name: 'JSON', extensions: ['json'] }] });
+    if (res.canceled || !res.filePaths || !res.filePaths[0]) return { ok: false, canceled: true };
+    const data = await fs.promises.readFile(res.filePaths[0], 'utf8');
+    const parsed = JSON.parse(data);
+    return { ok: true, favorites: parsed };
   } catch (e) { return { ok: false, error: e.message }; }
 });

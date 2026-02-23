@@ -17,4 +17,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   ,playlistsRestore: (filename) => ipcRenderer.invoke('playlists:restore', filename)
   ,playlistsCreateBackup: () => ipcRenderer.invoke('playlists:createBackup'),
   playlistsOpenBackupDir: () => ipcRenderer.invoke('playlists:openBackupDir')
+  ,favoritesSaveFile: (content) => ipcRenderer.invoke('favorites:saveFile', content)
+  ,favoritesLoadFile: () => ipcRenderer.invoke('favorites:loadFile')
+  ,settingsGet: () => ipcRenderer.invoke('settings:get')
+  ,settingsSet: (obj) => ipcRenderer.invoke('settings:set', obj)
+  ,appRestart: () => ipcRenderer.invoke('app:restart')
 });
