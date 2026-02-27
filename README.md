@@ -1,40 +1,71 @@
 # IPTV-Desktop App - Cross Platform (Mac Os,Win Os) 
+
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://shields.io/)
+[![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows-blue.svg)](https://github.com)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/node.js-18%2B-brightgreen.svg)](https://nodejs.org/)
+[![Electron](https://img.shields.io/badge/electron-26.0.0-9feaf9.svg)](https://www.electronjs.org/)
+[![Release](https://img.shields.io/badge/release-download-brightgreen.svg)](https://github.com/Michael09011/IPTV-Desktop/releases/tag/IPTV-Desktop)
+
 <img width="200" height="200" alt="IPTV-Desktop 앱 아이콘" src="build/icon.png" />
 
-<img width="1312" height="912" alt="스크린샷 2026-02-27 오후 1 17 17" src="https://github.com/user-attachments/assets/115ef9da-a3b9-4f74-800f-0de7f5701ec6" />
+<img width="1312" height="912" alt="스크린샷 2026-02-27 오후 1 17 17" src="https://github.com/user-attachments/assets/115ef9da-a3b9-4f74-800f-0de7f5701ec6" />
 
+Electron 기반 IPTV 데스크탑 앱(플레이리스트 불러오기, 채널 재생, 백업 등).
 
+## 🏗️ 기술 스택
 
-- Electron 기반 IPTV 데스크탑 앱(플레이리스트 불러오기, 채널 재생, 백업 등).
+### 🖥️ Frontend (프론트엔드)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
+![Electron](https://img.shields.io/badge/Electron-191970?style=flat-square&logo=electron&logoColor=white)
 
-## 앱 아이콘
+- **Renderer Process**: HTML5 + CSS3 + Vanilla JavaScript
+- **UI Framework**: Electron Renderer Process
+- **Location**: `app/` directory
+
+### ⚙️ Backend (백엔드)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white)
+![Electron](https://img.shields.io/badge/Electron%20Main-191970?style=flat-square&logo=electron&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
+
+- **Main Process**: Node.js + Electron Main Process
+- **API**: Preload Scripts & IPC Communication
+- **Location**: `src/` directory
+
+## 🎨 앱 아이콘
 
 앱 아이콘은 `build/icon.ico` (Windows) 및 `build/icon.icns` (macOS)에서 읽습니다. 기본 TV 스타일 아이콘을 자동 생성하려면 `python generate_icon.py`를 실행하세요(사전 설치: `pip install pillow`).
 
-아이콘을 직접 만들려면:
+아이콘을 직接 만들려면:
 1. 1024×1024px 이상의 PNG로 TV 실루엣을 그립니다.
 2. `.ico`는 [icoconvert.com](https://icoconvert.com/) 또는 ImageMagick/`convert` 사용, `.icns`는 macOS `iconutil`로 변환.
 3. 생성된 파일을 `build/`에 넣고 커밋하면 빌드시 자동 반영됩니다.
 
 > 빌드 설정은 `package.json`에서 이미 `build/icon.ico`와 `build/icon.icns`를 가리킵니다.
 
-<!-- Shields: replace <OWNER>/<REPO> with your GitHub owner/repo if you host this on GitHub -->
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://shields.io/)
-[![Release](https://img.shields.io/github/v/release/<OWNER>/<REPO>.svg)](https://github.com/<OWNER>/<REPO>/releases)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+## � 다운로드
 
+최신 릴리즈를 다운로드하세요:
 
-빠른 시작
-1. 의존성 설치
+🔗 **[릴리즈 페이지로 이동](https://github.com/Michael09011/IPTV-Desktop/releases/tag/IPTV-Desktp)**
+
+- 🍎 **macOS**: DMG 파일 다운로드 및 설치
+- 🪟 **Windows**: NSIS 설치 프로그램 또는 포터블 실행 파일 선택
+
+## �🚀 빠른 시작
+
+1. **의존성 설치**
    ```bash
    npm install
    ```
-2. 개발 모드 실행
+2. **개발 모드 실행**
    ```bash
    npm start
    ```
 
-3. 플랫폼별 빌드 테스트 (Windows/macOS 공통 설정이 적용되어 있음)
+3. **플랫폼별 빌드 테스트** (Windows/macOS 공통 설정이 적용되어 있음)
    ```bash
    # Windows 전용: NSIS 설치형 + 포터블
    npm run dist:win
@@ -46,9 +77,9 @@
    npm run dist:all
    ```
 
-번들(배포용) 만들기
+## 📦 번들(배포용) 만들기
 
-### Windows
+### 🪟 Windows
 - 설치형(NSIS) + 포터블
   ```bash
   npm run dist:win
@@ -56,7 +87,7 @@
   #         dist/IPTV-Desktop-Portable.exe
   ```
 
-### macOS (build tool은 macOS에서 실행해야 합니다)
+### 🍎 macOS (build tool은 macOS에서 실행해야 합니다)
 - 기본 DMG (x64)
   ```bash
   npm run dist:mac
@@ -67,42 +98,43 @@
   npx electron-builder --mac --x64 --arm64
   ```
 
-### 전체 플랫폼
+### 🌍 전체 플랫폼
 - macOS에서 실행하면 두 플랫폼 모두:
   ```bash
   npm run dist:all
   ```
 
-앱 실행 / 검사
+## 🔍 앱 실행 / 검사
 - DMG 열기(설치 창): `open dist/IPTV-Desktop-0.1.0.dmg`
 - .app 직접 실행: `open dist/IPTV-Desktop.app`
 - 앱 내부 리소스 확인: `ls -la dist/IPTV-Desktop.app/Contents/Resources/app`
 
-중요 동작 / 주의사항
-- 최초 실행 시 재생목록 초기화
+## ⚠️ 중요 동작 / 주의사항
+
+- **최초 실행 시 재생목록 초기화**
   - 패키지화된 (번들) 앱이 처음 실행될 때 기존 `playlists.json`을 빈 배열로 초기화합니다.
   - 초기화는 한 번만 수행되며 사용자 데이터 폴더에 `playlists_cleared_v1`(sentinel) 파일을 생성해 다시 초기화되지 않도록 합니다.
   - 개발환경에서 초기화를 재검증하려면 사용자 계정의 앱 `userData` 폴더에서 해당 sentinel 파일을 삭제하세요.
 
-- 사이드바 토글
+- **사이드바 토글**
   - 화면 왼쪽 상단에 고정된 토글 버튼(◀/▶)이 있습니다. 클릭하면 사이드바가 접히거나 펼쳐집니다.
   - 토글은 레이아웃을 직접 갱신하므로 비디오 재생이 중단되지 않습니다.
 
-- 코드 서명 / 공증
+- **코드 서명 / 공증**
   - 현재 빌드는 코드 서명이 적용되어 있지 않습니다. 배포(앱스토어 외 배포 포함)를 위해서는 Apple Developer 계정의 Developer ID 인증서로 서명하고 공증해야 합니다.
   - electron-builder 설정과 Apple 인증서 준비 방법은 electron-builder 문서(https://www.electron.build/code-signing)를 참고하세요.
 
-디버깅/로그
+## 🐛 디버깅/로그
 - 개발 중 콘솔 로그는 `npm start`로 실행한 터미널 및 개발자 도구(Inspect)에서 확인하세요.
 
-파일 위치(참고)
-- 소스: `app/` (프론트엔드), `src/` (메인 프로세스)
-- 빌드 결과: `dist/` (`.dmg`, `.app` 등)
+## 📂 프로젝트 구조
 
-문의 및 변경
-- README에 추가할 내용이나 배포 설정(서명/공증, 자동 업데이트 등)을 원하시면 알려주세요.
+- **프론트엔드**: `app/` (HTML, CSS, Vanilla JavaScript)
+- **백엔드**: `src/` (메인 프로세스, Preload Scripts)
+- **빌드 결과**: `dist/` (`.dmg`, `.exe` 등)
+- **리소스**: `assets/`, `build/` (아이콘 등)
 
-## 인증이 필요한 스트림
+## 🔐 인증이 필요한 스트림
 
 특정 URL 패턴에 대해 HTTP 헤더를 추가할 수 있습니다.
 
@@ -118,30 +150,38 @@ window.electronAPI.authSet({
 window.electronAPI.authList().then(console.log);
 ```
 
-## 시스템 요구사항
+## 💻 시스템 요구사항
 
-- macOS 10.13 이상
-- WIN OS
-- Node.js 18+
+- **macOS**: 10.13 이상
+- **Windows**: Windows 7 이상
+- **Node.js**: 18.0.0 이상
+- **디스크 공간**: 최소 200MB
 
-## 저작권
+## ⭐ 즐겨찾기 기능 사용법
+
+- **즐겨찾기 추가**: 채널 목록에서 별표(☆) 버튼을 클릭하면 즐겨찾기에 추가됩니다. 이미 추가된 항목은 별표가 채워진(★) 상태로 표시됩니다.
+- **즐겨찾기 관리**: 메인 화면 왼쪽 사이드바에서 `즐겨찾기 (N)` 버튼을 클릭하면 즐겨찾기 관리 모달이 열립니다. 모달에서 이름과 그룹을 편집하거나 항목을 재생/삭제할 수 있습니다.
+- **검색/필터**: 채널 화면에서 검색창에 여러 토큰을 입력하면 이름/그룹/TVG/URL에서 토큰을 모두 포함하는 항목만 표시됩니다. `즐겨찾기만` 체크박스로 즐겨찾기 항목만 필터링할 수 있습니다.
+- **내보내기/가져오기**: 즐겨찾기 목록을 JSON으로 내보내거나(브라우저 다운로드) 가져올 수 있습니다.
+- **파일 동기화**: 시스템 파일로 저장하거나 파일에서 불러오는 기능이 추가되었습니다. `파일에 저장` / `파일에서 불러오기` 버튼을 사용하면 로컬 파일에 직접 저장하거나 불러올 수 있습니다.
+
+## 🧪 간단 테스트
+
+1. **앱 실행**:
+   ```bash
+   npm start
+   ```
+2. **플레이리스트 열기**: 좌측 상단 `불러오기`에서 m3u 파일 또는 URL로 재생목록을 불러옵니다.
+3. **채널 화면 진입**: 재생목록의 `채널 보기` 버튼을 클릭합니다.
+4. **즐겨찾기 추가/제거**: 채널 항목의 별표 버튼을 클릭해 추가/제거합니다.
+5. **즐겨찾기 파일 저장/불러오기**: 채널 화면의 `파일에 저장` 버튼으로 favorites.json을 저장하고, `파일에서 불러오기` 버튼으로 다시 불러옵니다.
+
+## 📝 라이선스
 
 © 2026 Michael. All rights reserved.
 
-## 즐겨찾기 기능 사용법
+MIT License - see LICENSE file for details
 
-- 즐겨찾기 추가: 채널 목록에서 별표(☆) 버튼을 클릭하면 즐겨찾기에 추가됩니다. 이미 추가된 항목은 별표가 채워진(★) 상태로 표시됩니다.
-- 즐겨찾기 관리: 메인 화면 왼쪽 사이드바에서 `즐겨찾기 (N)` 버튼을 클릭하면 즐겨찾기 관리 모달이 열립니다. 모달에서 이름과 그룹을 편집하거나 항목을 재생/삭제할 수 있습니다.
-- 검색/필터: 채널 화면에서 검색창에 여러 토큰을 입력하면 이름/그룹/TVG/URL에서 토큰을 모두 포함하는 항목만 표시됩니다. `즐겨찾기만` 체크박스로 즐겨찾기 항목만 필터링할 수 있습니다.
-- 내보내기/가져오기: 즐겨찾기 목록을 JSON으로 내보내거나(브라우저 다운로드) 가져올 수 있습니다.
-- 파일 동기화: 시스템 파일로 저장하거나 파일에서 불러오는 기능이 추가되었습니다. `파일에 저장` / `파일에서 불러오기` 버튼을 사용하면 로컬 파일에 직접 저장하거나 불러올 수 있습니다.
+---
 
-간단 테스트
-
-1. 앱 실행: `npm start`
-2. 플레이리스트 열기: 좌측 상단 `불러오기`에서 m3u 파일 또는 URL로 재생목록을 불러옵니다.
-3. 채널 화면 진입: 재생목록의 `채널 보기` 버튼을 클릭합니다.
-4. 즐겨찾기 추가/제거: 채널 항목의 별표 버튼을 클릭해 추가/제거합니다.
-5. 즐겨찾기 파일 저장/불러오기: 채널 화면의 `파일에 저장` 버튼으로 favorites.json을 저장하고, `파일에서 불러오기` 버튼으로 다시 불러옵니다.
-
-문제가 있거나 추가 개선(그룹 폴더 트리, 원격 동기화 등)을 원하시면 알려주세요.
+문제가 있거나 추가 개선(그룹 폴더 트리, 원격 동기화 등)을 원하시면 이슈를 등록해주세요.
