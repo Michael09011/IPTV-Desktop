@@ -14,6 +14,7 @@
   "build": {
     "appId": "com.example.iptv",
     "productName": "IPTV-Desktop",
+    "artifactName": "${productName}-${platform}-${version}.${ext}",
     "win": {
       "target": [
         "nsis",
@@ -35,9 +36,14 @@
     "mac": {
       "target": ["dmg"],
       "category": "public.app-category.video",
-      "icon": "build/icon.icns"
+      "icon": "build/icon.icns",
+      "artifactName": "${productName}-Mac-${version}.${ext}"
     },
     "icon": "build/icon.icns",
+    "dmg": {
+      "background": null,
+      "iconSize": 80
+    },
     "files": [
       "app/**/*",
       "src/**/*",

@@ -4,6 +4,18 @@
 
 - Electron 기반 IPTV 데스크탑 앱(플레이리스트 불러오기, 채널 재생, 백업 등).
 
+## 앱 아이콘
+<img width="200" height="200" alt="IPTV-Desktop 앱 아이콘" src="build/icon.png" />
+
+앱 아이콘은 `build/icon.ico` (Windows) 및 `build/icon.icns` (macOS)에서 읽습니다. 기본 TV 스타일 아이콘을 자동 생성하려면 `python generate_icon.py`를 실행하세요(사전 설치: `pip install pillow`).
+
+아이콘을 직접 만들려면:
+1. 1024×1024px 이상의 PNG로 TV 실루엣을 그립니다.
+2. `.ico`는 [icoconvert.com](https://icoconvert.com/) 또는 ImageMagick/`convert` 사용, `.icns`는 macOS `iconutil`로 변환.
+3. 생성된 파일을 `build/`에 넣고 커밋하면 빌드시 자동 반영됩니다.
+
+> 빌드 설정은 `package.json`에서 이미 `build/icon.ico`와 `build/icon.icns`를 가리킵니다.
+
 <!-- Shields: replace <OWNER>/<REPO> with your GitHub owner/repo if you host this on GitHub -->
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://shields.io/)
 [![Release](https://img.shields.io/github/v/release/<OWNER>/<REPO>.svg)](https://github.com/<OWNER>/<REPO>/releases)
@@ -20,15 +32,43 @@
    npm start
    ```
 
+3. 플랫폼별 빌드 테스트 (Windows/macOS 공통 설정이 적용되어 있음)
+   ```bash
+   # Windows 전용: NSIS 설치형 + 포터블
+   npm run dist:win
+   
+   # macOS 전용 (맥에서만 실행 가능)
+   npm run dist:mac
+   
+   # 양쪽 플랫폼 모두 생성 (맥에서 실행)
+   npm run dist:all
+   ```
+
 번들(배포용) 만들기
-- macOS DMG 빌드 (기본 x64):
+
+### Windows
+- 설치형(NSIS) + 포터블
   ```bash
-  npm run dist
-  # 결과: dist/IPTV-Desktop-0.1.0.dmg, dist/IPTV-Desktop.app
+  npm run dist:win
+  # 결과: dist/IPTV-Desktop Setup 0.1.0.exe
+  #         dist/IPTV-Desktop-Portable.exe
   ```
-- Universal (x64 + arm64) 빌드:
+
+### macOS (build tool은 macOS에서 실행해야 합니다)
+- 기본 DMG (x64)
+  ```bash
+  npm run dist:mac
+  # 결과: dist/IPTV-Desktop-Mac-0.1.0.dmg
+  ```
+- Universal (x64 + arm64)
   ```bash
   npx electron-builder --mac --x64 --arm64
+  ```
+
+### 전체 플랫폼
+- macOS에서 실행하면 두 플랫폼 모두:
+  ```bash
+  npm run dist:all
   ```
 
 앱 실행 / 검사
