@@ -1,0 +1,36 @@
+{
+  "name": "iptv-web-dashboard",
+  "version": "0.1.0",
+  "description": "IPTV Web Dashboard - Access from any device",
+  "main": "server/app.js",
+  "scripts": {
+    "start": "node server/app.js",
+    "dev": "nodemon server/app.js",
+    "install": "npm install",
+    "build:web": "echo \"No web build step; static files are in public\"",
+    "cap:sync": "npx cap sync",
+    "cap:copy": "npx cap copy",
+    "cap:open:android": "npx cap open android",
+    "android:build": "npx cap build android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.1.0",
+    "@capacitor/cli": "^8.1.0",
+    "@capacitor/core": "^8.1.0",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  },
+  "keywords": [
+    "iptv",
+    "web",
+    "dashboard",
+    "streaming"
+  ],
+  "author": "Michael",
+  "license": "MIT"
+}
