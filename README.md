@@ -1,4 +1,4 @@
-# IPTV-Desktop
+# IPTV-Desktop App - Cross Platform (Mac Os,Win Os) 
 <img width="200" height="200" alt="IPTV-Desktop 앱 아이콘" src="build/icon.png" />
 
 <img width="1312" height="912" alt="스크린샷 2026-02-27 오후 1 17 17" src="https://github.com/user-attachments/assets/115ef9da-a3b9-4f74-800f-0de7f5701ec6" />
