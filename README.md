@@ -49,10 +49,10 @@ Electron 기반 IPTV 데스크탑 앱(플레이리스트 불러오기, 채널 �
 
 최신 릴리즈를 다운로드하세요:
 
-🔗 **[릴리즈 페이지로 이동](https://github.com/Michael09011/IPTV-Desktop/releases/tag/IPTV-Desktp)**
+🔗 **[릴리즈 페이지로 이동](https://github.com/Michael09011/IPTV-Desktop/releases/tag/IPTV-Desktop)**
 
-- 🍎 **macOS**: DMG 파일 다운로드 및 설치
-- 🪟 **Windows**: NSIS 설치 프로그램 또는 포터블 실행 파일 선택
+- 🍎 **macOS**: DMG 파일 
+- 🪟 **Windows**: NSIS 설치 프로그램
 
 ## �🚀 빠른 시작
 
