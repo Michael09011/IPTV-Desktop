@@ -114,11 +114,33 @@ async function openClickHandler() {
   try {
     const res = await window.electronAPI.openFile();
     if (res.canceled) return;
+
+    // the file dialog returns an array of { path, content }
+    // load the channels into the current session and **also save the
+    // playlists so the button behaves like "플레이리스트 추가" rather
+    // than a one‑off viewer.
     channels = [];
     for (const f of res.files) {
       const parsed = parsePlaylist(f.content, f.path);
       channels = channels.concat(parsed);
+
+      // save the playlist so it shows up in the sidebar
+      try {
+        // derive a simple name from the filename
+        const parts = f.path.split(/[\\\/]/);
+        const name = parts[parts.length - 1] || f.path;
+        const saveRes = await window.electronAPI.playlistsAdd({ name, url: '', content: f.content });
+        if (saveRes && saveRes.ok) {
+          showToast(`플레이리스트 "${name}" 저장됨`, 'success');
+        }
+      } catch (e) {
+        console.warn('플레이리스트 저장 실패', e);
+      }
     }
+
+    // reload the saved list so sidebar reflects any additions
+    await loadSavedPlaylists();
+
     const needHls = channels.some(c => c.url && c.url.endsWith('.m3u8'));
     try {
       const h = await ensureHlsAvailable(needHls);
@@ -190,13 +212,23 @@ async function showSettingsModal() {
   const autoLabel = document.createElement('label'); autoLabel.textContent = '자동 백업 (분)'; autoRow.appendChild(autoChk); autoRow.appendChild(autoLabel); autoRow.appendChild(minutesInput);
   body.appendChild(autoRow);
 
+  // Auto-refresh settings for remote playlists
+  const refreshRow = document.createElement('div'); refreshRow.style.display='flex'; refreshRow.style.alignItems='center'; refreshRow.style.gap='8px'; refreshRow.style.marginTop='8px';
+  const refreshChk = document.createElement('input'); refreshChk.type='checkbox'; refreshChk.checked = localStorage.getItem('autoRefreshEnabled') === '1';
+  const refreshMinutes = document.createElement('input'); refreshMinutes.type='number'; refreshMinutes.min='1'; refreshMinutes.style.width='64px'; refreshMinutes.value = localStorage.getItem('autoRefreshMinutes') || '60';
+  const refreshLabel = document.createElement('label'); refreshLabel.textContent = 'URL 자동 갱신 (분)';
+  refreshRow.appendChild(refreshChk); refreshRow.appendChild(refreshLabel); refreshRow.appendChild(refreshMinutes);
+  body.appendChild(refreshRow);
+
   const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px'; actions.style.marginTop='12px'; actions.style.justifyContent='flex-end';
   const restartBtn = document.createElement('button'); restartBtn.textContent='재시작'; restartBtn.className='primary'; restartBtn.onclick = async () => {
     // save setting then restart
     await window.electronAPI.settingsSet({ disableHardwareAcceleration: !!gpuChk.checked });
-    // persist auto backup to localStorage
+    // persist auto backup/refresh settings to localStorage
     localStorage.setItem('autoBackupEnabled', autoChk.checked ? '1' : '0');
     localStorage.setItem('autoBackupMinutes', String(Math.max(1, Number(minutesInput.value||60))));
+    localStorage.setItem('autoRefreshEnabled', refreshChk.checked ? '1' : '0');
+    localStorage.setItem('autoRefreshMinutes', String(Math.max(1, Number(refreshMinutes.value||60))));
     showToast('앱 재시작 중...', 'info');
     await window.electronAPI.appRestart();
   };
@@ -272,7 +304,14 @@ let _prevSearchHadFocus = false;
 async function loadSavedPlaylists() {
   try {
     const res = await window.electronAPI.playlistsList();
-    savedPlaylists = Array.isArray(res) ? res : [];
+    if (res && Array.isArray(res.playlists)) {
+      savedPlaylists = res.playlists;
+    } else if (Array.isArray(res)) {
+      // backwards compatibility
+      savedPlaylists = res;
+    } else {
+      savedPlaylists = [];
+    }
   } catch (e) { savedPlaylists = []; }
 }
 
@@ -360,6 +399,28 @@ function scheduleAutoBackup() {
       }, mins * 60 * 1000);
     }
   } catch (e) { console.error('scheduleAutoBackup failed', e); }
+}
+
+// Auto-refresh scheduler – fetch playlists list periodically
+function scheduleAutoRefresh() {
+  try {
+    if (window._autoRefreshTimer) { clearInterval(window._autoRefreshTimer); window._autoRefreshTimer = null; }
+    const on = localStorage.getItem('autoRefreshEnabled') === '1';
+    const mins = Math.max(1, Number(localStorage.getItem('autoRefreshMinutes') || '60'));
+    if (on) {
+      window._autoRefreshTimer = setInterval(async () => {
+        try {
+          const r = await window.electronAPI.playlistsList();
+          // reload metadata in any case so UI stays up to date
+          await loadSavedPlaylists();
+          render();
+          if (r && r.changed) {
+            showToast('URL 플레이리스트 자동 갱신 완료', 'success');
+          }
+        } catch (e) { console.error('autoRefresh error', e); }
+      }, mins * 60 * 1000);
+    }
+  } catch (e) { console.error('scheduleAutoRefresh failed', e); }
 }
 
 async function showFavoritesModal() {
@@ -551,6 +612,15 @@ function renderMainScreen() {
       nameDiv.style.fontWeight = '600';
       nameDiv.style.marginBottom = '4px';
       item.appendChild(nameDiv);
+      if (p.url) {
+        const urlDiv = document.createElement('div');
+        urlDiv.textContent = p.url;
+        urlDiv.style.fontSize = '10px';
+        urlDiv.style.color = 'var(--text-muted)';
+        urlDiv.style.wordBreak = 'break-all';
+        urlDiv.style.marginBottom = '4px';
+        item.appendChild(urlDiv);
+      }
 
       const actionDiv = document.createElement('div');
       actionDiv.style.display = 'flex';
@@ -581,7 +651,48 @@ function renderMainScreen() {
           render();
         }
       };
+      const refreshBtn = document.createElement('button');
+      refreshBtn.textContent = '🔄';
+      refreshBtn.title = 'URL에서 갱신';
+      refreshBtn.style.padding = '6px 8px';
+      refreshBtn.style.fontSize = '11px';
+      refreshBtn.style.flex = '0';
+      refreshBtn.disabled = !(p.url && /^https?:\/\//.test(p.url));
+      refreshBtn.onclick = async (e) => {
+        e.stopPropagation();
+        if (!p.url) return;
+        // visual feedback
+        const origText = refreshBtn.textContent;
+        refreshBtn.textContent = '⏳';
+        refreshBtn.disabled = true;
+        showToast('플레이리스트 갱신 중...', 'info');
+        try {
+          // grab the current full playlist so we can compare
+          const cur = await window.electronAPI.playlistsGet(p.id).catch(()=>null);
+          const oldContent = cur && cur.ok && cur.playlist ? cur.playlist.content : '';
+          const res = await window.electronAPI.fetchUrl(p.url);
+          if (res.ok && res.content && res.content !== oldContent) {
+            const upd = await window.electronAPI.playlistsAdd({ id: p.id, name: p.name, url: p.url, content: res.content });
+            if (upd && upd.ok) {
+              await loadSavedPlaylists();
+              showToast('플레이리스트 갱신됨', 'success');
+              render();
+            }
+          } else if (res.ok) {
+            showToast('변경사항 없음', 'info');
+          } else {
+            showToast('갱신 실패: ' + (res.error||'unknown'), 'error');
+          }
+        } catch (err) {
+          console.error('manual refresh error', err);
+          showToast('갱신 중 오류', 'error');
+        } finally {
+          refreshBtn.disabled = !(p.url && /^https?:\/\//.test(p.url));
+          refreshBtn.textContent = origText;
+        }
+      };
       actionDiv.appendChild(playBtn);
+      actionDiv.appendChild(refreshBtn);
 
       const delBtn = document.createElement('button');
       delBtn.textContent = '❌';
@@ -1166,4 +1277,4 @@ function _processToastQueue() {
   setTimeout(() => { t.style.opacity = '0'; setTimeout(()=> { t.remove(); window._toastQueue.shift(); _processToastQueue(); }, 250); }, timeout);
 }
 
-(async () => { await loadSavedPlaylists(); render(); try { scheduleAutoBackup(); } catch (e) {} })();
+(async () => { await loadSavedPlaylists(); render(); try { scheduleAutoBackup(); scheduleAutoRefresh(); } catch (e) {} })();

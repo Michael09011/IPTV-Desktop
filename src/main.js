@@ -274,9 +274,53 @@ ipcMain.handle('auth:remove', async (event, id) => {
   return { ok: true };
 });
 
+// helper used internally when we need to pull remote playlist data
+async function fetchUrlContent(url) {
+  return new Promise((resolve) => {
+    try {
+      const lib = url.startsWith('https') ? require('https') : require('http');
+      const req = lib.get(url, (res) => {
+        let data = '';
+        res.setEncoding('utf8');
+        res.on('data', (chunk) => data += chunk);
+        res.on('end', () => resolve({ ok: true, status: res.statusCode, url: res.responseUrl || url, content: data }));
+      });
+      req.on('error', (err) => resolve({ ok: false, error: err.message }));
+      req.setTimeout(10000, () => {
+        req.abort();
+        resolve({ ok: false, error: 'timeout' });
+      });
+    } catch (e) {
+      resolve({ ok: false, error: e.message });
+    }
+  });
+}
+
 ipcMain.handle('playlists:list', async () => {
   loadPlaylists();
-  return playlists.map(p => ({ id: p.id, name: p.name, url: p.url, created: p.created }));
+
+  // attempt to refresh any playlists that have a remote HTTP(S) URL.
+  // this will run synchronously so the first call from the renderer
+  // (typically on startup) will include updated data.  If a fetch
+  // fails we silently ignore it.
+  let changed = false;
+  const tasks = playlists.map(async (p) => {
+    if (p.url && /^https?:\/\//.test(p.url)) {
+      try {
+        const r = await fetchUrlContent(p.url);
+        if (r.ok && typeof r.content === 'string' && r.content !== p.content) {
+          p.content = r.content;
+          changed = true;
+        }
+      } catch (e) {
+        // ignore individual fetch errors
+      }
+    }
+  });
+  try { await Promise.all(tasks); } catch(e){}
+  if (changed) savePlaylists();
+
+  return { playlists: playlists.map(p => ({ id: p.id, name: p.name, url: p.url, created: p.created })), changed };
 });
 
 ipcMain.handle('playlists:get', async (event, id) => {
