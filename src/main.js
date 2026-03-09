@@ -344,6 +344,7 @@ ipcMain.handle('playlists:add', async (event, pl) => {
       id: existing.id,
       name: typeof pl.name === 'string' ? pl.name : existing.name || '',
       url: typeof pl.url === 'string' ? pl.url : existing.url || '',
+      epgUrl: typeof pl.epgUrl === 'string' ? pl.epgUrl : existing.epgUrl || '',
       content: (typeof pl.content === 'string' && pl.content.length) ? pl.content : existing.content || '',
       created: existing.created || new Date().toISOString()
     };
@@ -355,6 +356,7 @@ ipcMain.handle('playlists:add', async (event, pl) => {
   // new playlist
   if (!pl.id) pl.id = Date.now().toString();
   pl.created = new Date().toISOString();
+  pl.epgUrl = pl.epgUrl || '';
   pl.content = pl.content || '';
   playlists = playlists.filter(x => x.id !== pl.id);
   playlists.push(pl);

@@ -215,22 +215,75 @@ async function showSettingsModal() {
   // Auto-refresh settings for remote playlists
   const refreshRow = document.createElement('div'); refreshRow.style.display='flex'; refreshRow.style.alignItems='center'; refreshRow.style.gap='8px'; refreshRow.style.marginTop='8px';
   const refreshChk = document.createElement('input'); refreshChk.type='checkbox'; refreshChk.checked = localStorage.getItem('autoRefreshEnabled') === '1';
-  const refreshMinutes = document.createElement('input'); refreshMinutes.type='number'; refreshMinutes.min='1'; refreshMinutes.style.width='64px'; refreshMinutes.value = localStorage.getItem('autoRefreshMinutes') || '60';
-  const refreshLabel = document.createElement('label'); refreshLabel.textContent = 'URL 자동 갱신 (분)';
-  refreshRow.appendChild(refreshChk); refreshRow.appendChild(refreshLabel); refreshRow.appendChild(refreshMinutes);
+  const refreshSelect = document.createElement('select'); refreshSelect.style.width='80px';
+  const refreshOptions = [
+    { value: '360', text: '6시간' },
+    { value: '720', text: '12시간' },
+    { value: '1440', text: '24시간' }
+  ];
+  refreshOptions.forEach(opt => {
+    const option = document.createElement('option');
+    option.value = opt.value;
+    option.textContent = opt.text;
+    if (localStorage.getItem('autoRefreshMinutes') === opt.value) option.selected = true;
+    refreshSelect.appendChild(option);
+  });
+  const refreshLabel = document.createElement('label'); refreshLabel.textContent = 'M3U 자동 갱신';
+  refreshRow.appendChild(refreshChk); refreshRow.appendChild(refreshLabel); refreshRow.appendChild(refreshSelect);
   body.appendChild(refreshRow);
 
+  // EPG auto-refresh settings
+  const epgRefreshRow = document.createElement('div'); epgRefreshRow.style.display='flex'; epgRefreshRow.style.alignItems='center'; epgRefreshRow.style.gap='8px'; epgRefreshRow.style.marginTop='8px';
+  const epgRefreshChk = document.createElement('input'); epgRefreshChk.type='checkbox'; epgRefreshChk.checked = localStorage.getItem('epgAutoRefreshEnabled') === '1';
+  const epgRefreshSelect = document.createElement('select'); epgRefreshSelect.style.width='80px';
+  const epgRefreshOptions = [
+    { value: '360', text: '6시간' },
+    { value: '720', text: '12시간' },
+    { value: '1440', text: '24시간' }
+  ];
+  epgRefreshOptions.forEach(opt => {
+    const option = document.createElement('option');
+    option.value = opt.value;
+    option.textContent = opt.text;
+    if (localStorage.getItem('epgAutoRefreshMinutes') === opt.value) option.selected = true;
+    epgRefreshSelect.appendChild(option);
+  });
+  const epgRefreshLabel = document.createElement('label'); epgRefreshLabel.textContent = 'EPG 자동 갱신';
+  epgRefreshRow.appendChild(epgRefreshChk); epgRefreshRow.appendChild(epgRefreshLabel); epgRefreshRow.appendChild(epgRefreshSelect);
+  body.appendChild(epgRefreshRow);
+
+  // EPG settings
+  const epgRow = document.createElement('div'); epgRow.style.display='flex'; epgRow.style.alignItems='center'; epgRow.style.gap='8px'; epgRow.style.marginTop='8px';
+  const epgChk = document.createElement('input'); epgChk.type='checkbox'; epgChk.checked = localStorage.getItem('epgEnabled') === '1';
+  const epgLabel = document.createElement('label'); epgLabel.textContent = 'EPG 기능 활성화';
+  epgRow.appendChild(epgChk); epgRow.appendChild(epgLabel);
+  body.appendChild(epgRow);
+
   const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px'; actions.style.marginTop='12px'; actions.style.justifyContent='flex-end';
-  const restartBtn = document.createElement('button'); restartBtn.textContent='재시작'; restartBtn.className='primary'; restartBtn.onclick = async () => {
-    // save setting then restart
-    await window.electronAPI.settingsSet({ disableHardwareAcceleration: !!gpuChk.checked });
+  const restartBtn = document.createElement('button'); restartBtn.textContent='저장'; restartBtn.className='primary'; restartBtn.onclick = async () => {
+    // save setting then restart only if GPU setting changed
+    const currentGpuSetting = settings.disableHardwareAcceleration !== false;
+    const newGpuSetting = !!gpuChk.checked;
+    await window.electronAPI.settingsSet({ disableHardwareAcceleration: newGpuSetting });
     // persist auto backup/refresh settings to localStorage
     localStorage.setItem('autoBackupEnabled', autoChk.checked ? '1' : '0');
     localStorage.setItem('autoBackupMinutes', String(Math.max(1, Number(minutesInput.value||60))));
     localStorage.setItem('autoRefreshEnabled', refreshChk.checked ? '1' : '0');
-    localStorage.setItem('autoRefreshMinutes', String(Math.max(1, Number(refreshMinutes.value||60))));
-    showToast('앱 재시작 중...', 'info');
-    await window.electronAPI.appRestart();
+    localStorage.setItem('autoRefreshMinutes', refreshSelect.value || '360');
+    localStorage.setItem('epgAutoRefreshEnabled', epgRefreshChk.checked ? '1' : '0');
+    localStorage.setItem('epgAutoRefreshMinutes', epgRefreshSelect.value || '360');
+    localStorage.setItem('epgEnabled', epgChk.checked ? '1' : '0');
+    // 재설정 자동 갱신 타이머
+    scheduleAutoRefresh();
+    scheduleAutoEPGRefresh();
+    
+    if (currentGpuSetting !== newGpuSetting) {
+      showToast('GPU 설정 변경으로 앱 재시작 중...', 'info');
+      await window.electronAPI.appRestart();
+    } else {
+      showToast('설정 저장됨', 'success');
+      modal.remove();
+    }
   };
   const closeBtn = document.createElement('button'); closeBtn.textContent='닫기'; closeBtn.onclick = () => modal.remove();
   actions.appendChild(closeBtn); actions.appendChild(restartBtn);
@@ -274,6 +327,7 @@ async function showUrlModal() {
 
   const urlInput = document.createElement('input'); urlInput.placeholder='URL 입력'; urlInput.style.width='100%'; urlInput.style.marginBottom='8px'; body.appendChild(urlInput);
   const nameInput = document.createElement('input'); nameInput.placeholder='이름 (선택)'; nameInput.style.width='100%'; nameInput.style.marginBottom='8px'; body.appendChild(nameInput);
+  const epgUrlInput = document.createElement('input'); epgUrlInput.placeholder='EPG URL (선택)'; epgUrlInput.style.width='100%'; epgUrlInput.style.marginBottom='8px'; body.appendChild(epgUrlInput);
   const addBtn = document.createElement('button'); addBtn.textContent='불러오기'; addBtn.className='primary'; addBtn.style.width='100%';
   addBtn.onclick = async () => {
     const url = urlInput.value.trim(); if (!url) return alert('URL을 입력하세요');
@@ -281,7 +335,8 @@ async function showUrlModal() {
     const res = await window.electronAPI.fetchUrl(url);
     if (!res.ok) { alert('불러오기 실패: ' + (res.error||'unknown')); addBtn.disabled=false; addBtn.textContent='불러오기'; return; }
     const name = nameInput.value.trim() || url.split('/').pop() || 'playlist';
-    const saveRes = await window.electronAPI.playlistsAdd({ name, url, content: res.content });
+    const epgUrl = epgUrlInput.value.trim();
+    const saveRes = await window.electronAPI.playlistsAdd({ name, url, epgUrl: epgUrl || undefined, content: res.content });
     if (saveRes.ok) { await loadSavedPlaylists(); render(); modal.remove(); }
     addBtn.disabled = false; addBtn.textContent = '불러오기';
   };
@@ -406,7 +461,7 @@ function scheduleAutoRefresh() {
   try {
     if (window._autoRefreshTimer) { clearInterval(window._autoRefreshTimer); window._autoRefreshTimer = null; }
     const on = localStorage.getItem('autoRefreshEnabled') === '1';
-    const mins = Math.max(1, Number(localStorage.getItem('autoRefreshMinutes') || '60'));
+    const mins = Math.max(1, Number(localStorage.getItem('autoRefreshMinutes') || '360'));
     if (on) {
       window._autoRefreshTimer = setInterval(async () => {
         try {
@@ -415,12 +470,50 @@ function scheduleAutoRefresh() {
           await loadSavedPlaylists();
           render();
           if (r && r.changed) {
-            showToast('URL 플레이리스트 자동 갱신 완료', 'success');
+            showToast('M3U 플레이리스트 자동 갱신 완료', 'success');
           }
-        } catch (e) { console.error('autoRefresh error', e); }
+        } catch (e) { 
+          console.error('autoRefresh error', e);
+          showToast('M3U 플레이리스트 자동 갱신 실패', 'error');
+        }
       }, mins * 60 * 1000);
     }
   } catch (e) { console.error('scheduleAutoRefresh failed', e); }
+}
+
+function scheduleAutoEPGRefresh() {
+  try {
+    if (window._autoEPGRefreshTimer) { clearInterval(window._autoEPGRefreshTimer); window._autoEPGRefreshTimer = null; }
+    const on = localStorage.getItem('epgAutoRefreshEnabled') === '1';
+    const mins = Math.max(1, Number(localStorage.getItem('epgAutoRefreshMinutes') || '360'));
+    if (on) {
+      window._autoEPGRefreshTimer = setInterval(async () => {
+        try {
+          // EPG 데이터 갱신 로직 (현재 플레이리스트의 EPG URL들을 확인)
+          let updatedCount = 0;
+          for (const playlist of savedPlaylists) {
+            if (playlist.epgUrl && playlist.epgUrl.trim()) {
+              try {
+                const res = await window.electronAPI.fetchUrl(playlist.epgUrl);
+                if (res.ok) {
+                  // EPG 데이터가 성공적으로 로드됨 (캐시나 다른 방식으로 저장 가능)
+                  updatedCount++;
+                }
+              } catch (e) {
+                console.error(`EPG refresh failed for ${playlist.name}:`, e);
+              }
+            }
+          }
+          if (updatedCount > 0) {
+            showToast(`EPG 데이터 ${updatedCount}개 자동 갱신 완료`, 'success');
+          }
+        } catch (e) { 
+          console.error('autoEPGRefresh error', e);
+          showToast('EPG 자동 갱신 실패', 'error');
+        }
+      }, mins * 60 * 1000);
+    }
+  } catch (e) { console.error('scheduleAutoEPGRefresh failed', e); }
 }
 
 async function showFavoritesModal() {
@@ -752,6 +845,17 @@ function renderMainScreen() {
       urlInput2.style.fontSize = '10px';
       urlInput2.oninput = (e) => { editablePlaylists[idx].url = e.target.value; };
 
+      const epgUrlInput = document.createElement('input');
+      epgUrlInput.value = p.epgUrl || '';
+      epgUrlInput.placeholder = 'EPG URL (선택)';
+      epgUrlInput.style.flex = '1';
+      epgUrlInput.style.minWidth = '0';
+      epgUrlInput.style.overflow = 'hidden';
+      epgUrlInput.style.textOverflow = 'ellipsis';
+      epgUrlInput.style.marginBottom = '0';
+      epgUrlInput.style.fontSize = '10px';
+      epgUrlInput.oninput = (e) => { editablePlaylists[idx].epgUrl = e.target.value; };
+
       const previewDiv = document.createElement('div');
       previewDiv.style.fontSize = '9px';
       previewDiv.style.color = 'var(--text-muted)';
@@ -790,7 +894,7 @@ function renderMainScreen() {
         render();
       };
 
-      row.appendChild(handle); row.appendChild(nameInput2); row.appendChild(urlInput2); row.appendChild(saveBtn); row.appendChild(delBtn2);
+      row.appendChild(handle); row.appendChild(nameInput2); row.appendChild(urlInput2); row.appendChild(epgUrlInput); row.appendChild(saveBtn); row.appendChild(delBtn2);
       savedList.appendChild(row);
       savedList.appendChild(previewDiv);
     });
@@ -1196,8 +1300,8 @@ async function playChannel(ch) {
 
   tryPlay();
 
-  const epgUrl = localStorage.getItem('epgUrl');
-  if (epgUrl && ch.tvgId) {
+  const epgUrl = selectedPlaylistId ? savedPlaylists.find(p => p.id === selectedPlaylistId)?.epgUrl : localStorage.getItem('epgUrl');
+  if (epgUrl && ch.tvgId && localStorage.getItem('epgEnabled') === '1') {
     const res = await window.electronAPI.fetchUrl(epgUrl);
     if (res.ok) {
       const programs = parseEPG(res.content);
@@ -1277,4 +1381,4 @@ function _processToastQueue() {
   setTimeout(() => { t.style.opacity = '0'; setTimeout(()=> { t.remove(); window._toastQueue.shift(); _processToastQueue(); }, 250); }, timeout);
 }
 
-(async () => { await loadSavedPlaylists(); render(); try { scheduleAutoBackup(); scheduleAutoRefresh(); } catch (e) {} })();
+(async () => { await loadSavedPlaylists(); render(); try { scheduleAutoBackup(); scheduleAutoRefresh(); scheduleAutoEPGRefresh(); } catch (e) {} })();

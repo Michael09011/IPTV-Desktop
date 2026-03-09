@@ -5,7 +5,10 @@
   "author": "IPTV-Desktop Contributors",
   "main": "src/main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:all": "electron-builder --win --mac"
   },
   "devDependencies": {
     "electron": "^26.0.0",
