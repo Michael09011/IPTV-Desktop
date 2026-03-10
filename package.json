@@ -1,6 +1,6 @@
 {
   "name": "iptv-desktop",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Simple IPTV desktop app supporting JSON/M3U/M3U8 playlists",
   "author": "IPTV-Desktop Contributors",
   "main": "src/main.js",

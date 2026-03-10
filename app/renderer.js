@@ -259,6 +259,27 @@ async function showSettingsModal() {
   epgRow.appendChild(epgChk); epgRow.appendChild(epgLabel);
   body.appendChild(epgRow);
 
+  // Network buffer settings
+  const bufferRow = document.createElement('div'); bufferRow.style.display='flex'; bufferRow.style.alignItems='center'; bufferRow.style.gap='8px'; bufferRow.style.marginTop='8px';
+  const bufferModeSelect = document.createElement('select'); bufferModeSelect.style.width='80px';
+  const bufferOptions = [
+    { value: 'auto', text: '자동' },
+    { value: 'manual', text: '수동' }
+  ];
+  bufferOptions.forEach(opt => {
+    const option = document.createElement('option');
+    option.value = opt.value;
+    option.textContent = opt.text;
+    if (localStorage.getItem('bufferMode') === opt.value) option.selected = true;
+    bufferModeSelect.appendChild(option);
+  });
+  const bufferLabel = document.createElement('label'); bufferLabel.textContent = '네트워크 버퍼';
+  const bufferInput = document.createElement('input'); bufferInput.type='number'; bufferInput.min='10'; bufferInput.max='300'; bufferInput.step='5'; bufferInput.style.width='64px'; bufferInput.value = localStorage.getItem('maxBufferLength') || '30';
+  bufferInput.disabled = localStorage.getItem('bufferMode') !== 'manual';
+  bufferModeSelect.onchange = () => { bufferInput.disabled = bufferModeSelect.value !== 'manual'; };
+  bufferRow.appendChild(bufferLabel); bufferRow.appendChild(bufferModeSelect); bufferRow.appendChild(bufferInput);
+  body.appendChild(bufferRow);
+
   const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px'; actions.style.marginTop='12px'; actions.style.justifyContent='flex-end';
   const restartBtn = document.createElement('button'); restartBtn.textContent='저장'; restartBtn.className='primary'; restartBtn.onclick = async () => {
     // save setting then restart only if GPU setting changed
@@ -273,6 +294,8 @@ async function showSettingsModal() {
     localStorage.setItem('epgAutoRefreshEnabled', epgRefreshChk.checked ? '1' : '0');
     localStorage.setItem('epgAutoRefreshMinutes', epgRefreshSelect.value || '360');
     localStorage.setItem('epgEnabled', epgChk.checked ? '1' : '0');
+    localStorage.setItem('bufferMode', bufferModeSelect.value || 'auto');
+    localStorage.setItem('maxBufferLength', bufferInput.value || '30');
     // 재설정 자동 갱신 타이머
     scheduleAutoRefresh();
     scheduleAutoEPGRefresh();
@@ -1265,7 +1288,13 @@ async function playChannel(ch) {
     console.log('tryPlay', { url, attempt, hasHls: !!window.Hls, videoTag: !!video });
     if (window.Hls && (window.Hls.isSupported || window.Hls.prototype) && url.endsWith('.m3u8')) {
       try {
-        const hls = new window.Hls();
+        const bufferMode = localStorage.getItem('bufferMode') || 'auto';
+        const maxBufferLength = bufferMode === 'manual' ? parseInt(localStorage.getItem('maxBufferLength') || '30') : undefined;
+        const hlsConfig = {};
+        if (maxBufferLength) {
+          hlsConfig.maxBufferLength = maxBufferLength;
+        }
+        const hls = new window.Hls(hlsConfig);
         currentHls = hls;
         hls.on(window.Hls.Events.MANIFEST_LOADING, () => console.log('HLS: manifest loading'));
         hls.on(window.Hls.Events.MANIFEST_PARSED, () => { console.log('HLS: manifest parsed'); setStatus('재생 중...', false); isRetrying = false; video.play().catch(err=>{ console.error('play failed', err); showToast('재생 실패','error'); }); });
