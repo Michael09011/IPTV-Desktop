@@ -1,5 +1,10 @@
 import { parsePlaylist } from './parsers.js';
 
+console.log('Window innerHeight:', window.innerHeight);
+
+// Force window size
+window.electronAPI.winResize(1200, 800);
+
 const root = document.getElementById('root');
 const openBtn = document.getElementById('openBtn');
 let searchInput;
@@ -30,6 +35,11 @@ let currentRetryTimer = null;
 let isRetrying = false;
 const HLS_MAX_RETRIES = 3;
 const HLS_BASE_DELAY_MS = 1500;
+
+// MPV Player Support
+let useMpvPlayer = false;
+let currentMpv = null;
+let mpvInitialized = false;
 
 // Sidebar navigation
 let sidebarView = 'main'; // 'main' or 'channels'
@@ -83,29 +93,11 @@ let selectedPlaylistId = null;
 let selectedPlaylistName = null;
 let playlistChannels = [];
 
-async function ensureHlsAvailable(need) {
-  if (!need) { window.Hls = null; return null; }
-  if (window.Hls) return window.Hls;
-  const existing = document.querySelector('script[data-hls-loader]');
-  if (existing) {
-    return new Promise((resolve) => {
-      existing.addEventListener('load', () => resolve(window.Hls || null));
-      existing.addEventListener('error', () => resolve(null));
-    });
+async function ensureHlsAvailable(needHls) {
+  if (needHls && !window.Hls) {
+    // HLS.js already loaded in index.html
   }
-  try {
-    const mod = await import('https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js');
-    window.Hls = (mod && (mod.default || mod.Hls)) || window.Hls || null;
-    if (window.Hls) return window.Hls;
-  } catch (e) {}
-  return new Promise((resolve) => {
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js';
-    s.dataset.hlsLoader = '1';
-    s.addEventListener('load', () => { resolve(window.Hls || null); });
-    s.addEventListener('error', () => { resolve(null); });
-    document.head.appendChild(s);
-  });
+  return window.Hls;
 }
 
 async function openClickHandler() {
@@ -280,6 +272,35 @@ async function showSettingsModal() {
   bufferRow.appendChild(bufferLabel); bufferRow.appendChild(bufferModeSelect); bufferRow.appendChild(bufferInput);
   body.appendChild(bufferRow);
 
+  // External player settings
+  const externalRow = document.createElement('div'); externalRow.style.display='flex'; externalRow.style.alignItems='center'; externalRow.style.gap='8px'; externalRow.style.marginTop='8px';
+  const externalChk = document.createElement('input'); externalChk.type='checkbox'; externalChk.checked = localStorage.getItem('useExternalPlayer') === '1';
+  const externalLabel = document.createElement('label'); externalLabel.textContent = '외부 플레이어 사용';
+  const playerSelect = document.createElement('select'); playerSelect.style.width='80px';
+  const playerOptions = [
+    { value: 'vlc', text: 'VLC' },
+    { value: 'iina', text: 'IINA' }
+  ];
+  playerOptions.forEach(opt => {
+    const option = document.createElement('option');
+    option.value = opt.value;
+    option.textContent = opt.text;
+    if (localStorage.getItem('externalPlayerType') === opt.value || (!localStorage.getItem('externalPlayerType') && opt.value === 'vlc')) option.selected = true;
+    playerSelect.appendChild(option);
+  });
+  const playerPathInput = document.createElement('input'); playerPathInput.type='text'; playerPathInput.placeholder='플레이어 경로 (선택)'; playerPathInput.style.width='200px'; playerPathInput.value = localStorage.getItem('externalPlayerPath') || '';
+  externalRow.appendChild(externalChk); externalRow.appendChild(externalLabel); externalRow.appendChild(playerSelect); externalRow.appendChild(playerPathInput);
+  body.appendChild(externalRow);
+
+  // MPV player settings (NEW)
+  const mpvRow = document.createElement('div'); mpvRow.style.display='flex'; mpvRow.style.alignItems='center'; mpvRow.style.gap='8px'; mpvRow.style.marginTop='8px';
+  const mpvChk = document.createElement('input'); mpvChk.type='checkbox'; mpvChk.checked = localStorage.getItem('useMpvPlayer') === '1';
+  const mpvLabel = document.createElement('label'); mpvLabel.textContent = 'MPV 플레이어 사용 (RTMP, MPEG-TS, HLS, DASH)';
+  const mpvNote = document.createElement('small'); mpvNote.textContent = '⚠️ macOS에서 mpv 설치 필요: brew install mpv'; mpvNote.style.display='block'; mpvNote.style.marginTop='4px'; mpvNote.style.color='var(--text-muted)'; mpvNote.style.fontSize='11px';
+  mpvRow.appendChild(mpvChk); mpvRow.appendChild(mpvLabel);
+  body.appendChild(mpvRow);
+  body.appendChild(mpvNote);
+
   const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px'; actions.style.marginTop='12px'; actions.style.justifyContent='flex-end';
   const restartBtn = document.createElement('button'); restartBtn.textContent='저장'; restartBtn.className='primary'; restartBtn.onclick = async () => {
     // save setting then restart only if GPU setting changed
@@ -296,6 +317,10 @@ async function showSettingsModal() {
     localStorage.setItem('epgEnabled', epgChk.checked ? '1' : '0');
     localStorage.setItem('bufferMode', bufferModeSelect.value || 'auto');
     localStorage.setItem('maxBufferLength', bufferInput.value || '30');
+    localStorage.setItem('useExternalPlayer', externalChk.checked ? '1' : '0');
+    localStorage.setItem('externalPlayerType', playerSelect.value || 'vlc');
+    localStorage.setItem('externalPlayerPath', playerPathInput.value.trim() || '');
+    localStorage.setItem('useMpvPlayer', mpvChk.checked ? '1' : '0');
     // 재설정 자동 갱신 타이머
     scheduleAutoRefresh();
     scheduleAutoEPGRefresh();
@@ -416,7 +441,7 @@ function debounce(fn, wait) {
 }
 
 // scheduleRender is reused across renders to avoid recreating debounce
-const scheduleRender = debounce(() => render(), 160);
+const scheduleRender = debounce(() => render(), 300);
 
 function ensureSortableLoaded() {
   return new Promise((resolve) => {
@@ -728,6 +753,34 @@ function renderMainScreen() {
       nameDiv.style.fontWeight = '600';
       nameDiv.style.marginBottom = '4px';
       item.appendChild(nameDiv);
+
+      // 외부 플레이어 옵션
+      const externalDiv = document.createElement('div');
+      externalDiv.style.display = 'flex';
+      externalDiv.style.alignItems = 'center';
+      externalDiv.style.gap = '4px';
+      externalDiv.style.marginBottom = '4px';
+      const externalChk = document.createElement('input');
+      externalChk.type = 'checkbox';
+      externalChk.checked = p.externalPlayerOnly || false;
+      externalChk.onchange = async () => {
+        console.log('체크박스 변경:', { id: p.id, name: p.name, externalPlayerOnly: externalChk.checked });
+        const updated = { ...p, externalPlayerOnly: externalChk.checked };
+        console.log('저장할 플레이리스트:', updated);
+        const res = await window.electronAPI.playlistsAdd(updated);
+        console.log('저장 결과:', res);
+        await loadSavedPlaylists();
+        console.log('로드된 플레이리스트:', savedPlaylists.find(x => x.id === p.id));
+        render();
+      };
+      const externalLabel = document.createElement('label');
+      externalLabel.textContent = '외부 플레이어만 사용';
+      externalLabel.style.fontSize = '10px';
+      externalLabel.style.color = 'var(--text-muted)';
+      externalDiv.appendChild(externalChk);
+      externalDiv.appendChild(externalLabel);
+      item.appendChild(externalDiv);
+
       if (p.url) {
         const urlDiv = document.createElement('div');
         urlDiv.textContent = p.url;
@@ -762,8 +815,9 @@ function renderMainScreen() {
             const h = await ensureHlsAvailable(needHls);
             console.log('Hls module loaded', !!h);
           } catch (e) { console.error('ensureHlsAvailable failed', e); }
+          channelFilterText = ''; // 플레이리스트 변경 시 검색 초기화
+          currentGroup = 'All'; // 그룹도 초기화
           sidebarView = 'channels';
-          currentGroup = 'All';
           render();
         }
       };
@@ -788,7 +842,7 @@ function renderMainScreen() {
           const oldContent = cur && cur.ok && cur.playlist ? cur.playlist.content : '';
           const res = await window.electronAPI.fetchUrl(p.url);
           if (res.ok && res.content && res.content !== oldContent) {
-            const upd = await window.electronAPI.playlistsAdd({ id: p.id, name: p.name, url: p.url, content: res.content });
+            const upd = await window.electronAPI.playlistsAdd({ id: p.id, name: p.name, url: p.url, content: res.content, externalPlayerOnly: p.externalPlayerOnly });
             if (upd && upd.ok) {
               await loadSavedPlaylists();
               showToast('플레이리스트 갱신됨', 'success');
@@ -950,16 +1004,71 @@ function renderMainScreen() {
 
   leftCol.appendChild(savedDiv);
 
-  // Favorites quick access
-  const favAccess = document.createElement('div');
-  favAccess.style.marginTop = '8px';
-  const favBtnMain = document.createElement('button');
-  favBtnMain.textContent = `즐겨찾기 (${favorites.size})`;
-  favBtnMain.className = 'primary';
-  favBtnMain.style.width = '100%';
-  favBtnMain.onclick = () => showFavoritesModal();
-  favAccess.appendChild(favBtnMain);
-  leftCol.appendChild(favAccess);
+  // Favorites section
+  const favDiv = document.createElement('div');
+  favDiv.style.marginTop = '16px';
+  const favTitle = document.createElement('strong');
+  favTitle.textContent = `즐겨찾기 (${favorites.size})`;
+  favTitle.style.display = 'block';
+  favTitle.style.marginBottom = '8px';
+  favDiv.appendChild(favTitle);
+
+  const favList = document.createElement('div');
+  favList.style.display = 'flex';
+  favList.style.flexDirection = 'column';
+  favList.style.gap = '4px';
+  favList.style.maxHeight = '200px';
+  favList.style.overflowY = 'auto';
+
+  Array.from(favorites.entries()).forEach(([url, info]) => {
+    const item = document.createElement('div');
+    item.style.padding = '8px';
+    item.style.borderRadius = '4px';
+    item.style.background = 'var(--accent)';
+    item.style.cursor = 'pointer';
+    item.style.fontSize = '11px';
+    item.onmouseenter = () => { item.style.background = '#334155'; };
+    item.onmouseleave = () => { item.style.background = 'var(--accent)'; };
+
+    const nameDiv = document.createElement('div');
+    nameDiv.textContent = info.name || url;
+    nameDiv.style.fontWeight = '600';
+    item.appendChild(nameDiv);
+
+    const groupDiv = document.createElement('div');
+    groupDiv.textContent = info.group || '';
+    groupDiv.style.fontSize = '10px';
+    groupDiv.style.color = 'var(--text-muted)';
+    item.appendChild(groupDiv);
+
+    item.onclick = () => {
+      // Find channel and play
+      const ch = channels.find(c => c.url === url) || { url, name: info.name, group: info.group };
+      playChannel(ch);
+    };
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '✕';
+    delBtn.style.padding = '2px 4px';
+    delBtn.style.fontSize = '10px';
+    delBtn.style.background = '#dc2626';
+    delBtn.style.border = 'none';
+    delBtn.style.borderRadius = '2px';
+    delBtn.style.color = '#fff';
+    delBtn.style.cursor = 'pointer';
+    delBtn.onclick = (e) => {
+      e.stopPropagation();
+      favorites.delete(url);
+      saveFavorites();
+      render();
+    };
+    item.appendChild(delBtn);
+
+    favList.appendChild(item);
+  });
+
+  favDiv.appendChild(favList);
+  leftCol.appendChild(favDiv);
 
   // Schedule auto-backup is now handled globally (settings modal controls)
 
@@ -1064,6 +1173,8 @@ function renderChannelScreen() {
   const favOnlyLabel = document.createElement('label'); favOnlyLabel.htmlFor = 'favOnlyChk'; favOnlyLabel.textContent = '즐겨찾기만';
   favOnlyWrap.appendChild(favOnlyChk); favOnlyWrap.appendChild(favOnlyLabel);
 
+  favOnlyChk.onchange = () => render();
+
   const controlsRow = document.createElement('div'); controlsRow.style.display = 'flex'; controlsRow.style.gap = '6px'; controlsRow.style.flexWrap = 'wrap';
   const exportFavBtn = document.createElement('button'); exportFavBtn.textContent = '즐겨찾기 내보내기'; exportFavBtn.style.fontSize = '11px';
   exportFavBtn.onclick = () => {
@@ -1109,7 +1220,7 @@ function renderChannelScreen() {
   };
   controlsRow.appendChild(exportFavBtn); controlsRow.appendChild(importFavBtn); controlsRow.appendChild(saveToFileBtn); controlsRow.appendChild(loadFromFileBtn);
 
-  search.oninput = () => { channelFilterText = search.value.toLowerCase(); scheduleRender(); };
+  search.oninput = () => { channelFilterText = search.value.toLowerCase(); renderChannelList(channelSection, groupSel, favOnlyChk); };
   // restore selection and focus if applicable
   try {
     if (_prevSearchHadFocus) {
@@ -1134,6 +1245,25 @@ function renderChannelScreen() {
   channelSection.style.flex = '1';
   channelSection.style.overflowY = 'auto';
 
+  renderChannelList(channelSection, groupSel, favOnlyChk);
+
+  leftCol.appendChild(channelSection);
+
+  // Player area
+  rightCol.innerHTML = `
+    <video id="video" controls></video>
+    <div id="playerStatus"></div>
+    <div id="epg"></div>
+  `;
+
+  root.appendChild(leftCol);
+  root.appendChild(rightCol);
+  // ensure fixed toggle exists and is updated
+  try { ensureFixedSidebarToggle(); } catch (e) {}
+}
+
+function renderChannelList(channelSection, groupSel, favOnlyChk) {
+  // Update group selector
   const groups = ['All', ...Array.from(new Set(playlistChannels.map(c => c.group || 'Ungrouped'))).sort()];
   groupSel.innerHTML = '';
   groups.forEach(g => {
@@ -1143,6 +1273,7 @@ function renderChannelScreen() {
     groupSel.appendChild(opt);
   });
 
+  // Filter channels
   const tokens = (channelFilterText || '').split(/\s+/).filter(Boolean);
   const filtered = playlistChannels.filter(c => {
     if (currentGroup !== 'All' && (c.group || 'Ungrouped') !== currentGroup) return false;
@@ -1152,6 +1283,8 @@ function renderChannelScreen() {
     return tokens.every(tok => hay.some(h => h.includes(tok)));
   });
 
+  // Clear and rebuild channel list
+  channelSection.innerHTML = '';
   if (playlistChannels.length > 0) {
     const channelCountTitle = document.createElement('strong');
     channelCountTitle.textContent = `채널 (${filtered.length}/${playlistChannels.length})`;
@@ -1198,35 +1331,160 @@ function renderChannelScreen() {
       channelSection.appendChild(el);
     });
   }
-
-  leftCol.appendChild(channelSection);
-
-  // Player area
-  rightCol.innerHTML = `
-    <video id="video" controls></video>
-    <div id="playerStatus"></div>
-    <div id="epg"></div>
-  `;
-
-  root.appendChild(leftCol);
-  root.appendChild(rightCol);
-  // ensure fixed toggle exists and is updated
-  try { ensureFixedSidebarToggle(); } catch (e) {}
 }
 
-function toggleFav(ch) {
-  if (favorites.has(ch.url)) {
-    favorites.delete(ch.url);
-    saveFavorites();
-  } else {
-    try {
-      favorites.set(ch.url, { name: ch.name || '', group: ch.group || '', addedAt: Date.now(), tvgId: ch.tvgId || '' });
-      saveFavorites();
-    } catch (e) { console.error('toggleFav set error', e); }
+/**
+ * Play channel using MPV player (NEW)
+ * Supports RTMP, MPEG-TS, HLS, DASH, and more
+ */
+async function playChannelWithMpv(ch) {
+  const statusDiv = document.getElementById('playerStatus');
+  const epgDiv = document.getElementById('epg');
+  epgDiv.innerHTML = '';
+  statusDiv.innerHTML = '';
+  
+  const url = ch.url;
+  if (!url) return;
+
+  try {
+    // Initialize MPV if not already done
+    if (!mpvInitialized || !currentMpv) {
+      statusDiv.textContent = 'MPV 플레이어 초기화 중...';
+      console.log('[MPV] Initializing adapter...');
+      
+      currentMpv = new window.MPVAdapter();
+      await currentMpv.init();
+      mpvInitialized = true;
+      console.log('[MPV] Adapter initialized');
+    }
+
+    // Set up event listeners
+    currentMpv.on('file-loaded', () => {
+      console.log('[MPV] File loaded');
+      statusDiv.textContent = '재생 중...';
+      statusDiv.style.color = '#10b981';
+    });
+
+    currentMpv.on('end-file', () => {
+      console.log('[MPV] Playback ended');
+      statusDiv.textContent = '재생 완료';
+    });
+
+    // Load and play the file
+    statusDiv.textContent = '스트림 연결 중...';
+    statusDiv.style.color = '#10b981';
+    
+    console.log(`[MPV] Loading URL: ${url}`);
+    await currentMpv.loadFile(url);
+    
+    // Wait a moment for playback to start
+    await new Promise(r => setTimeout(r, 1000));
+    
+    currentPlayingUrl = url;
+    isRetrying = false;
+    try { updateCurrentChannelDisplay(); } catch (e) {}
+
+    console.log('[MPV] Playback started');
+
+    // Fetch and display EPG (if enabled)
+    const epgUrl = selectedPlaylistId ? savedPlaylists.find(p => p.id === selectedPlaylistId)?.epgUrl : localStorage.getItem('epgUrl');
+    if (epgUrl && ch.tvgId && localStorage.getItem('epgEnabled') === '1') {
+      try {
+        const res = await window.electronAPI.fetchUrl(epgUrl);
+        if (res.ok) {
+          const programs = parseEPG(res.content);
+          const now = new Date();
+          const nowPrograms = programs.filter(p => (p.channelId === ch.tvgId || p.channel === ch.tvgId) && p.start && p.end && now >= p.start && now < p.end);
+          if (nowPrograms.length) {
+            epgDiv.innerHTML = `<strong>현재:</strong> ${nowPrograms.slice(0,2).map(p=>`${p.title}`).join(' / ')}`;
+          }
+        }
+      } catch (e) {
+        console.log('[MPV] EPG fetch error:', e.message);
+      }
+    }
+
+  } catch (e) {
+    console.error('[MPV] playChannelWithMpv error:', e.message);
+    statusDiv.textContent = `MPV 오류: ${e.message}`;
+    statusDiv.style.color = '#dc2626';
+    
+    // Cleanup on error
+    if (currentMpv) {
+      try {
+        await currentMpv.disconnect();
+        currentMpv = null;
+        mpvInitialized = false;
+      } catch (e2) {
+        console.error('[MPV] Cleanup error:', e2.message);
+      }
+    }
+    
+    throw e;
   }
 }
 
 async function playChannel(ch) {
+  let useExternal = localStorage.getItem('useExternalPlayer') === '1';
+  useMpvPlayer = localStorage.getItem('useMpvPlayer') === '1';
+
+  // 플레이리스트 옵션 확인
+  if (selectedPlaylistId) {
+    const playlist = savedPlaylists.find(p => p.id === selectedPlaylistId);
+    console.log('재생 시 플레이리스트 확인:', { selectedPlaylistId, playlist, externalPlayerOnly: playlist?.externalPlayerOnly });
+    if (playlist && playlist.externalPlayerOnly) {
+      console.log('외부 플레이어만 사용으로 설정됨');
+      useExternal = true;
+    }
+  }
+  console.log('playChannel useExternal:', useExternal, 'useMpv:', useMpvPlayer);
+  
+  if (useExternal) {
+    const playerType = localStorage.getItem('externalPlayerType') || 'vlc';
+    const playerPath = localStorage.getItem('externalPlayerPath') || '';
+    // 이전 플레이어 죽이기
+    await window.electronAPI.killCurrentPlayer();
+    try {
+      let res;
+      if (playerType === 'vlc') {
+        res = await window.electronAPI.spawnVlc(ch.url, playerPath);
+        showToast('VLC로 재생 중...', 'info');
+      } else if (playerType === 'iina') {
+        res = await window.electronAPI.spawnIina(ch.url, playerPath);
+        showToast('IINA로 재생 중...', 'info');
+      } else {
+        showToast('지원하지 않는 플레이어', 'error');
+        return;
+      }
+      if (res.ok && res.pid) {
+        window.electronAPI.setCurrentPlayerPid(res.pid);
+      }
+      // 플레이어가 열리면 내부 플레이어 정지
+      const video = document.getElementById('video');
+      if (video) {
+        video.pause();
+        video.src = '';
+      }
+      return;
+    } catch (e) {
+      showToast(`${playerType.toUpperCase()} 열기 실패: ` + e.message, 'error');
+      // 실패 시 내부 플레이어로 폴백
+    }
+  }
+  
+  // MPV Player check (NEW)
+  if (useMpvPlayer) {
+    try {
+      await playChannelWithMpv(ch);
+      return;
+    } catch (e) {
+      console.error('[MPV] Failed:', e.message);
+      showToast(`MPV 플레이어 오류: ${e.message}. HLS 플레이어로 전환합니다.`, 'error');
+      useMpvPlayer = false;
+      // Fall through to HLS player
+    }
+  }
+  
   // If a retry is in progress:
   // - selecting the same channel should cancel pending retry and immediately retry
   // - selecting a different channel cancels previous retry and proceeds normally
@@ -1249,6 +1507,7 @@ async function playChannel(ch) {
   }
 
   const video = document.getElementById('video');
+  video.crossOrigin = 'anonymous';
   const epgDiv = document.getElementById('epg');
   const statusDiv = document.getElementById('playerStatus');
   epgDiv.innerHTML = '';
@@ -1286,6 +1545,7 @@ async function playChannel(ch) {
     attempt++;
     setStatus(`재생 시도 중... (${attempt}회)`);
     console.log('tryPlay', { url, attempt, hasHls: !!window.Hls, videoTag: !!video });
+    // HLS Player 시도
     if (window.Hls && (window.Hls.isSupported || window.Hls.prototype) && url.endsWith('.m3u8')) {
       try {
         const bufferMode = localStorage.getItem('bufferMode') || 'auto';
@@ -1313,7 +1573,7 @@ async function playChannel(ch) {
         });
         hls.attachMedia(video);
         hls.loadSource(url);
-        video.addEventListener('error', (ev) => { const err = video.error; console.error('VideoElement error', err); showToast('플레이어 오류','error'); });
+        video.addEventListener('error', (ev) => { const err = video.error; console.error('VideoElement error', err, url); showToast('플레이어 오류','error'); });
       } catch (e) {
         console.error('Hls error', e);
         try { video.src = url; await video.play(); setStatus('재생 중...', false); isRetrying = false; } catch (err) { setStatus('재생 실패', true); }

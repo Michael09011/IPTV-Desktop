@@ -24,6 +24,12 @@ try {
     app.disableHardwareAcceleration();
     app.commandLine.appendSwitch('disable-gpu');
   }
+  // Enable H.265 decoding support
+  app.commandLine.appendSwitch('--enable-hevc-decoding');
+  app.commandLine.appendSwitch('--enable-features', 'PlatformHEVCDecoderSupport,HEVCDecoder');
+  app.commandLine.appendSwitch('--enable-accelerated-video-decode');
+  app.commandLine.appendSwitch('--disable-web-security');
+  app.commandLine.appendSwitch('--allow-running-insecure-content');
 } catch (e) { /* ignore */ }
 
 const RULES_FILE = path.join(app.getPath('userData'), 'auth_rules.json');
@@ -50,6 +56,12 @@ function loadPlaylists() {
   try {
     if (fs.existsSync(PLAYLISTS_FILE)) {
       playlists = JSON.parse(fs.readFileSync(PLAYLISTS_FILE, 'utf8')) || [];
+    } else {
+      // First run: initialize with default playlists
+      playlists = [
+        { name: '샘플 플레이리스트', url: '', content: '#EXTM3U\n#EXTINF:-1,샘플 채널\nhttp://example.com/sample.m3u8' }
+      ];
+      savePlaylists(); // Save the initial playlists
     }
   } catch (e) { playlists = []; }
 }
@@ -100,7 +112,7 @@ ipcMain.handle('playlists:restore', async (event, filename) => {
     if (!Array.isArray(data)) return { ok: false, error: 'invalid backup' };
     // backup current before restore
     savePlaylistsBackup();
-    playlists = data.map(p => ({ id: p.id || Date.now().toString(), name: p.name||'', url: p.url||'', content: p.content||'', created: p.created||new Date().toISOString() }));
+    playlists = data.map(p => ({ id: p.id || Date.now().toString(), name: p.name||'', url: p.url||'', epgUrl: p.epgUrl||'', content: p.content||'', externalPlayerOnly: typeof p.externalPlayerOnly === 'boolean' ? p.externalPlayerOnly : false, created: p.created||new Date().toISOString() }));
     savePlaylists();
     return { ok: true };
   } catch (e) { return { ok: false, error: e.message }; }
@@ -139,6 +151,272 @@ ipcMain.handle('app:restart', async () => {
   } catch (e) { return { ok: false, error: e.message } }
 });
 
+ipcMain.handle('open-external', async (event, url) => {
+  try {
+    await shell.openExternal(url);
+    return { ok: true };
+  } catch (e) { return { ok: false, error: e.message } }
+});
+
+ipcMain.handle('spawn-vlc', async (event, url, vlcPath) => {
+  try {
+    const { spawn } = require('child_process');
+    if (!vlcPath) {
+      if (process.platform === 'darwin') vlcPath = '/Applications/VLC.app/Contents/MacOS/VLC';
+      else if (process.platform === 'win32') vlcPath = 'C:\\Program Files\\VideoLAN\\VLC\\vlc.exe';
+      else vlcPath = 'vlc';
+    }
+    const child = spawn(vlcPath, [url], { detached: true, stdio: 'ignore' });
+    child.unref();
+    return { ok: true, pid: child.pid };
+  } catch (e) { return { ok: false, error: e.message } }
+});
+
+ipcMain.handle('spawn-iina', async (event, url, iinaPath) => {
+  try {
+    const { spawn } = require('child_process');
+    if (!iinaPath) {
+      if (process.platform === 'darwin') iinaPath = '/Applications/IINA.app/Contents/MacOS/IINA';
+      else iinaPath = 'iina';
+    }
+    const child = spawn(iinaPath, [url], { detached: true, stdio: 'ignore' });
+    child.unref();
+    return { ok: true, pid: child.pid };
+  } catch (e) { return { ok: false, error: e.message } }
+});
+
+ipcMain.handle('kill-current-player', () => {
+  if (global.currentPlayerPid) {
+    try { process.kill(global.currentPlayerPid); } catch (e) {}
+    global.currentPlayerPid = null;
+  }
+});
+
+ipcMain.handle('set-current-player-pid', (event, pid) => {
+  global.currentPlayerPid = pid;
+});
+
+// ===== MPV Player Support =====
+const net = require('net');
+const os = require('os');
+
+global.mpvProcess = null;
+global.mpvSocket = null;
+global.mpvSocketPath = null;
+global.mpvEventQueue = [];
+global.mpvCmdId = 0;
+global.mpvPendingRequests = new Map();
+
+/**
+ * Get mpv socket path based on platform
+ */
+function getMpvSocketPath() {
+  const sockName = `mpv-socket-${Date.now()}`;
+  if (process.platform === 'win32') {
+    return `\\\\.\\pipe\\${sockName}`;
+  } else {
+    return path.join(os.tmpdir(), sockName);
+  }
+}
+
+/**
+ * Find mpv executable
+ */
+function findMpvExecutable() {
+  const { execSync } = require('child_process');
+  try {
+    if (process.platform === 'darwin') {
+      // Try brew first, then standard app
+      try {
+        execSync('which mpv', { stdio: 'ignore' });
+        return 'mpv';
+      } catch (e1) {
+        try {
+          execSync('ls /opt/homebrew/bin/mpv', { stdio: 'ignore' });
+          return '/opt/homebrew/bin/mpv';
+        } catch (e2) {
+          return '/usr/local/bin/mpv';
+        }
+      }
+    } else if (process.platform === 'win32') {
+      try {
+        execSync('where mpv', { stdio: 'ignore' });
+        return 'mpv';
+      } catch (e) {
+        return 'C:\\Program Files\\mpv\\mpv.exe';
+      }
+    } else {
+      try {
+        execSync('which mpv', { stdio: 'ignore' });
+        return 'mpv';
+      } catch (e) {
+        return '/usr/bin/mpv';
+      }
+    }
+  } catch (e) {
+    return 'mpv'; // fallback to PATH
+  }
+}
+
+ipcMain.handle('spawn-mpv', async (event) => {
+  try {
+    const { spawn } = require('child_process');
+    
+    // Kill existing mpv if running
+    if (global.mpvProcess) {
+      try { global.mpvProcess.kill(); } catch (e) {}
+      global.mpvProcess = null;
+    }
+    if (global.mpvSocket) {
+      try { global.mpvSocket.destroy(); } catch (e) {}
+      global.mpvSocket = null;
+    }
+
+    global.mpvSocketPath = getMpvSocketPath();
+    const mpvExe = findMpvExecutable();
+
+    console.log(`[IPC] Spawning mpv: ${mpvExe} with socket: ${global.mpvSocketPath}`);
+
+    // Start mpv with JSON IPC socket
+    global.mpvProcess = spawn(mpvExe, [
+      `--input-ipc-server=${global.mpvSocketPath}`,
+      '--no-terminal',
+      '--force-window=immediate',
+      '--keep-open=yes',
+      '--idle=yes'
+    ], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      detached: process.platform !== 'win32'
+    });
+
+    if (process.platform !== 'win32') {
+      global.mpvProcess.unref();
+    }
+
+    // Handle mpv process exit
+    global.mpvProcess.on('exit', (code) => {
+      console.log(`[IPC] mpv process exited with code ${code}`);
+      global.mpvProcess = null;
+      global.mpvSocket = null;
+    });
+
+    // Log stderr
+    global.mpvProcess.stderr?.on('data', (data) => {
+      console.log(`[mpv stderr] ${data}`);
+    });
+
+    return {
+      ok: true,
+      pid: global.mpvProcess.pid,
+      socketPath: global.mpvSocketPath
+    };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
+ipcMain.handle('connect-mpv-socket', async (event, socketPath) => {
+  return new Promise((resolve) => {
+    try {
+      if (global.mpvSocket) {
+        try { global.mpvSocket.destroy(); } catch (e) {}
+      }
+
+      const client = net.createConnection(socketPath);
+
+      client.on('connect', () => {
+        console.log('[IPC] Connected to mpv socket');
+        global.mpvSocket = client;
+
+        // Listen for data
+        client.on('data', (data) => {
+          const lines = data.toString().split('\n');
+          for (const line of lines) {
+            if (line.trim()) {
+              try {
+                const evt = JSON.parse(line);
+                global.mpvEventQueue.push(evt);
+              } catch (e) {
+                console.error('[IPC] Parse error:', e.message);
+              }
+            }
+          }
+        });
+
+        client.on('error', (e) => {
+          console.error('[IPC] Socket error:', e.message);
+          global.mpvSocket = null;
+        });
+
+        client.on('end', () => {
+          console.log('[IPC] Socket closed');
+          global.mpvSocket = null;
+        });
+
+        resolve({ ok: true });
+      });
+
+      client.on('error', (e) => {
+        console.error('[IPC] Connection error:', e.message);
+        resolve({ ok: false, error: e.message });
+      });
+
+      // Timeout after 10 seconds
+      setTimeout(() => {
+        if (!global.mpvSocket) {
+          client.destroy();
+          resolve({ ok: false, error: 'Connection timeout' });
+        }
+      }, 10000);
+    } catch (e) {
+      resolve({ ok: false, error: e.message });
+    }
+  });
+});
+
+ipcMain.handle('send-mpv-command', async (event, request) => {
+  try {
+    if (!global.mpvSocket || !global.mpvSocket.writable) {
+      return { ok: false, error: 'Socket not connected' };
+    }
+
+    const line = JSON.stringify(request) + '\n';
+    global.mpvSocket.write(line);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
+ipcMain.handle('get-mpv-events', async (event) => {
+  try {
+    const events = global.mpvEventQueue.splice(0);
+    return events;
+  } catch (e) {
+    return [];
+  }
+});
+
+ipcMain.handle('kill-mpv', async (event, pid) => {
+  try {
+    if (global.mpvProcess) {
+      try { global.mpvProcess.kill(); } catch (e) {}
+      global.mpvProcess = null;
+    }
+    if (global.mpvSocket) {
+      try { global.mpvSocket.destroy(); } catch (e) {}
+      global.mpvSocket = null;
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
+ipcMain.handle('win-resize', async (event, w, h) => {
+  if (win) win.setSize(w, h);
+});
+
 // register webRequest header injection after app is ready
 function registerSessionHooks() {
   try {
@@ -163,14 +441,26 @@ function registerSessionHooks() {
   }
 }
 
+let win;
+
 function createWindow() {
-  const win = new BrowserWindow({
+  win = new BrowserWindow({
     width: 1200,
     height: 800,
+    minWidth: 800,
+    minHeight: 600,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      webSecurity: false,
+      experimentalFeatures: {
+        webkit: {
+          webRTC: true,
+          webGL: true
+        },
+        modules: true
+      }
     }
   });
 
@@ -320,7 +610,7 @@ ipcMain.handle('playlists:list', async () => {
   try { await Promise.all(tasks); } catch(e){}
   if (changed) savePlaylists();
 
-  return { playlists: playlists.map(p => ({ id: p.id, name: p.name, url: p.url, created: p.created })), changed };
+  return { playlists: playlists.map(p => ({ id: p.id, name: p.name, url: p.url, epgUrl: p.epgUrl, externalPlayerOnly: p.externalPlayerOnly, created: p.created })), changed };
 });
 
 ipcMain.handle('playlists:get', async (event, id) => {
@@ -346,6 +636,7 @@ ipcMain.handle('playlists:add', async (event, pl) => {
       url: typeof pl.url === 'string' ? pl.url : existing.url || '',
       epgUrl: typeof pl.epgUrl === 'string' ? pl.epgUrl : existing.epgUrl || '',
       content: (typeof pl.content === 'string' && pl.content.length) ? pl.content : existing.content || '',
+      externalPlayerOnly: typeof pl.externalPlayerOnly === 'boolean' ? pl.externalPlayerOnly : existing.externalPlayerOnly || false,
       created: existing.created || new Date().toISOString()
     };
     playlists = playlists.filter(x => x.id !== merged.id);
@@ -358,6 +649,7 @@ ipcMain.handle('playlists:add', async (event, pl) => {
   pl.created = new Date().toISOString();
   pl.epgUrl = pl.epgUrl || '';
   pl.content = pl.content || '';
+  pl.externalPlayerOnly = pl.externalPlayerOnly || false;
   playlists = playlists.filter(x => x.id !== pl.id);
   playlists.push(pl);
   savePlaylists();
@@ -372,7 +664,7 @@ ipcMain.handle('playlists:remove', async (event, id) => {
 });
 
 ipcMain.handle('playlists:update', async (event, newList) => {
-  // newList: array of playlist objects { id, name, url, content, created? }
+  // newList: array of playlist objects { id, name, url, content, epgUrl?, externalPlayerOnly?, created? }
   if (!Array.isArray(newList)) return { ok: false, error: 'invalid' };
   try {
     // backup current
@@ -381,7 +673,9 @@ ipcMain.handle('playlists:update', async (event, newList) => {
       id: p.id || Date.now().toString(),
       name: p.name || '',
       url: p.url || '',
+      epgUrl: p.epgUrl || '',
       content: p.content || '',
+      externalPlayerOnly: typeof p.externalPlayerOnly === 'boolean' ? p.externalPlayerOnly : false,
       created: p.created || new Date().toISOString()
     }));
     savePlaylists();
@@ -422,7 +716,9 @@ ipcMain.handle('playlists:import', async (event) => {
       id: p.id || Date.now().toString(),
       name: p.name || '',
       url: p.url || '',
+      epgUrl: p.epgUrl || '',
       content: p.content || '',
+      externalPlayerOnly: typeof p.externalPlayerOnly === 'boolean' ? p.externalPlayerOnly : false,
       created: p.created || new Date().toISOString()
     }));
     savePlaylists();

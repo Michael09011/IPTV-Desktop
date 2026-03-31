@@ -6,9 +6,10 @@
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
+    "dist": "electron-builder",
     "dist:win": "electron-builder --win",
     "dist:mac": "electron-builder --mac",
-    "dist:all": "electron-builder --win --mac"
+    "dist:all": "electron-builder -m -w"
   },
   "devDependencies": {
     "electron": "^26.0.0",
@@ -37,7 +38,9 @@
       "artifactName": "${productName}-Portable.exe"
     },
     "mac": {
-      "target": ["dmg"],
+      "target": [
+        "dmg"
+      ],
       "category": "public.app-category.video",
       "icon": "build/icon.icns",
       "artifactName": "${productName}-Mac-${version}.${ext}"
@@ -55,12 +58,11 @@
     ],
     "asar": false
   },
-  "scripts": {
-    "start": "electron .",
-    "dist": "electron-builder",
-    "dist:win": "electron-builder --win",
-    "dist:mac": "electron-builder --mac",
-    "dist:all": "electron-builder -m -w"
+  "dependencies": {
+    "@videojs/http-streaming": "^3.17.4",
+    "hls.js": "^1.6.15",
+    "mpv": "^2.0.3",
+    "shaka-player": "^4.4.0",
+    "video.js": "^8.23.7"
   }
 }
-

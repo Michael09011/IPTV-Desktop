@@ -1,17 +1,18 @@
-# IPTV-Desktop App v0.1.2 - Cross Platform (Mac Os,Win Os) 
+# IPTV-Desktop App v0.1.3 - Cross Platform (Mac Os, Win Os, Linux) 
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://shields.io/)
-[![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows-blue.svg)](https://github.com)
+[![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows%20|%20Linux-blue.svg)](https://github.com)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node.js-18%2B-brightgreen.svg)](https://nodejs.org/)
 [![Electron](https://img.shields.io/badge/electron-26.0.0-9feaf9.svg)](https://www.electronjs.org/)
+[![MPV Support](https://img.shields.io/badge/mpv-player-important.svg)](https://mpv.io/)
 [![Release](https://img.shields.io/badge/release-download-brightgreen.svg)](https://github.com/Michael09011/IPTV-Desktop/releases/tag/IPTV-Desktop)
 
 <img width="200" height="200" alt="IPTV-Desktop 앱 아이콘" src="build/icon.png" />
 
 <img width="1312" height="912" alt="스크린샷 2026-02-27 오후 1 17 17" src="https://github.com/user-attachments/assets/115ef9da-a3b9-4f74-800f-0de7f5701ec6" />
 
-Electron 기반 IPTV 데스크탑 앱(플레이리스트 불러오기, 채널 재생, 백업 등).
+Electron 기반 IPTV 데스크탑 앱 (플레이리스트 불러오기, 채널 재생, MPV/VLC 플레이어 지원, EPG, 자동 백업 등).
 
 ## 🏗️ 기술 스택
 
@@ -22,6 +23,10 @@ Electron 기반 IPTV 데스크탑 앱(플레이리스트 불러오기, 채널 �
 ![Electron](https://img.shields.io/badge/Electron-191970?style=flat-square&logo=electron&logoColor=white)
 
 - **Renderer Process**: HTML5 + CSS3 + Vanilla JavaScript
+- **HLS.js**: HLS/M3U8 스트림 재생
+- **Shaka Player**: DASH 및 SmoothStreaming 지원
+- **Video.js**: 비디오 플레이어 기반
+- **MPV Adapter**: JSON-IPC를 통한 mpv 플레이어 지원 (RTMP, MPEG-TS, 등)
 - **UI Framework**: Electron Renderer Process
 - **Location**: `app/` directory
 
@@ -32,7 +37,18 @@ Electron 기반 IPTV 데스크탑 앱(플레이리스트 불러오기, 채널 �
 
 - **Main Process**: Node.js + Electron Main Process
 - **API**: Preload Scripts & IPC Communication
+- **mpv Integration**: 외부 mpv 프로세스 제어 (JSON-IPC socket)
 - **Location**: `src/` directory
+
+## 📺 플레이어 지원
+
+### 내부 플레이어
+- **HLS.js**: M3U8, HLS 스트림 (기본)
+- **Shaka Player**: DASH, SmoothStreaming
+- **Video.js**: 범용 비디오 플레이어
+- **Native HTML5 Video**: MP4, WebM, Ogg
+
+### MPV 플레이어 (새로운 기능!)
 
 ## 🎨 앱 아이콘
 
@@ -72,6 +88,7 @@ Electron 기반 IPTV 데스크탑 앱(플레이리스트 불러오기, 채널 �
    - 자동 갱신 완료/실패 시 토스트 알림
    - GPU, 캐시, 자동 백업/갱신 옵션 지원
    - 네트워크 버퍼: 자동/수동 모드 선택, 수동 시 버퍼 길이 조정 (기본 30초, 권장 60~120초)
+   - 외부 플레이어: VLC 등 외부 플레이어 사용 시 경로 지정 (기본 경로 자동 감지, 수동 지정 가능)
 
 3. **플랫폼별 빌드 테스트** (Windows/macOS 공통 설정이 적용되어 있음)
    ```bash

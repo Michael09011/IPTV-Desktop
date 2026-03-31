@@ -16,7 +16,7 @@
       header { padding:12px 20px; background:linear-gradient(90deg,#1a202cee,var(--bg)); display:flex; align-items:center; gap:12px; box-shadow:0 2px 8px rgba(0,0,0,0.3); border-bottom:1px solid var(--border); }
       header h3{margin:0;font-size:18px;color:var(--text-primary);font-weight:600}
       header .brand-icon{width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,var(--primary),#06b6d4);display:inline-block}
-      #root { display:grid; grid-template-columns:280px 1fr; gap:0; height:calc(100vh - 56px); }
+      #root { display:grid; grid-template-columns:280px 1fr; gap:0; height:calc(100% - 56px); min-height:600px; background: #0f1419; }
       .left-col { background:var(--card); border-right:1px solid var(--border); overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; }
       .left-col input, .left-col select { background:#0f1419; border:1px solid var(--border); color:var(--text-primary); margin-bottom:4px; }
       .left-col button { background:#334155; color:var(--text-primary); border:1px solid var(--border); }
@@ -92,6 +92,8 @@
       <button id="openBtn" class="primary">+ 플레이리스트 추가</button>
     </header>
     <div id="root"></div>
+    <script src="../node_modules/hls.js/dist/hls.min.js"></script>
+    <script src="./mpv-adapter.js"></script>
     <script type="module" src="./renderer.js"></script>
   </body>
 </html>
