@@ -41,8 +41,8 @@
         font-size: 12px;
       }
       #sidebarToggle:hover { background:#475569; }
-      .player { background:var(--bg); padding:12px; overflow-y:auto; }
-      .player video { border-radius:8px; background:#000; width:100%; height:calc(100vh - 140px); }
+      .player { background:var(--bg); padding:0; overflow:hidden; height:100%; }
+      .player video { border-radius:0; background:#000; width:100%; height:100%; object-fit:contain; }
       /* Playlist section titles */
       .left-col strong { color:var(--text-primary); display:block; margin-top:8px; margin-bottom:6px; font-size:13px; text-transform:uppercase; letter-spacing:0.5px; }
       /* channel list items - compact */
@@ -87,6 +87,7 @@
     <header>
       <div class="brand-icon" aria-hidden="true"></div>
       <div style="flex:1"></div>
+      <button id="favoritesBtn">즐겨찾기</button>
       <button id="openUrlBtn">URL 불러오기</button>
       <button id="settingsBtn">설정</button>
       <button id="openBtn" class="primary">+ 플레이리스트 추가</button>

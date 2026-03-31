@@ -31,7 +31,7 @@ class MPVAdapter {
       console.log(`[MPV] Process spawned: PID=${this.mpvPid}, socket=${this.socketPath}`);
       
       // Give mpv a moment to start up
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 1500));
       await this._connectToSocket();
       this.isConnected = true;
       this.retryCount = 0;
@@ -190,6 +190,30 @@ class MPVAdapter {
   }
 
   /**
+   * Event listener support
+   */
+  on(eventName, callback) {
+    if (!this.eventListeners[eventName]) {
+      this.eventListeners[eventName] = [];
+    }
+    this.eventListeners[eventName].push(callback);
+  }
+
+  /**
+   * Disconnect from mpv
+   */
+  async disconnect() {
+    try {
+      this.isConnected = false;
+      if (global.currentMpv) {
+        await window.electronAPI.killMpv();
+      }
+    } catch (e) {
+      console.error('[MPV] Disconnect error:', e.message);
+    }
+  }
+
+  /**
    * Send low-level command to mpv
    * @private
    */
@@ -205,11 +229,11 @@ class MPVAdapter {
     };
 
     return new Promise((resolve, reject) => {
-      // Set timeout
+      // Set timeout (10 seconds for network streams)
       const timeoutId = setTimeout(() => {
         this.pendingCmds.delete(cmdId);
         reject(new Error(`Command timeout: ${command}`));
-      }, 5000);
+      }, 10000);
 
       // Store pending command
       this.pendingCmds.set(cmdId, { resolve, reject, timeoutId });
@@ -262,8 +286,10 @@ class MPVAdapter {
         clearTimeout(pending.timeoutId);
         this.pendingCmds.delete(evt.request_id);
         
-        if (evt.error === 'success') {
+        // mpv returns error: null for success
+        if (evt.error === null || evt.error === undefined) {
           pending.resolve(evt.data);
+          console.log(`[MPV] Command success:`, evt.request_id);
         } else {
           pending.reject(new Error(evt.error || 'Command failed'));
         }

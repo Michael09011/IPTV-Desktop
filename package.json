@@ -60,6 +60,7 @@
   },
   "dependencies": {
     "@videojs/http-streaming": "^3.17.4",
+    "fluent-ffmpeg": "^2.1.3",
     "hls.js": "^1.6.15",
     "mpv": "^2.0.3",
     "shaka-player": "^4.4.0",

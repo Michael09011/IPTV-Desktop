@@ -27,10 +27,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   ,spawnIina: (url, path) => ipcRenderer.invoke('spawn-iina', url, path)
   ,killCurrentPlayer: () => ipcRenderer.invoke('kill-current-player')
   ,setCurrentPlayerPid: (pid) => ipcRenderer.invoke('set-current-player-pid', pid)
-  ,spawnMpv: () => ipcRenderer.invoke('spawn-mpv')
-  ,connectMpvSocket: (socketPath) => ipcRenderer.invoke('connect-mpv-socket', socketPath)
-  ,sendMpvCommand: (request) => ipcRenderer.invoke('send-mpv-command', request)
-  ,getMpvEvents: () => ipcRenderer.invoke('get-mpv-events')
-  ,killMpv: (pid) => ipcRenderer.invoke('kill-mpv', pid)
+  // FFmpeg 스트림 변환 (RTMP/MPEG-TS → HLS)
+  ,startFFmpegStream: (url) => ipcRenderer.invoke('start-ffmpeg-stream', url)
+  ,stopFFmpegStream: (url) => ipcRenderer.invoke('stop-ffmpeg-stream', url)
   ,winResize: (w, h) => ipcRenderer.invoke('win-resize', w, h)
 });

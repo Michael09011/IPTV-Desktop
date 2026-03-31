@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog, shell, Menu } = require('electron')
 const { session } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const ffmpeg = require('fluent-ffmpeg');
 
 // Settings file stored in userData
 const SETTINGS_FILE = path.join(app.getPath('userData'), 'settings.json');
@@ -71,6 +72,145 @@ function savePlaylists() {
 }
 
 loadPlaylists();
+
+// ==================== FFmpeg 스트림 변환 관리 ====================
+let ffmpegProcesses = {}; // URL -> FFmpeg 프로세스
+let hlsServers = {};      // URL -> HLS 서버 정보
+
+const net = require('net');
+
+// 사용 가능한 포트 찾기
+function findAvailablePort(startPort = 3000) {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.listen(0, '127.0.0.1', () => {
+      const port = server.address().port;
+      server.close(() => resolve(port));
+    });
+    server.on('error', () => findAvailablePort(startPort + 1));
+  });
+}
+
+// FFmpeg 스트림 변환 (RTMP/MPEG-TS → HLS)
+ipcMain.handle('start-ffmpeg-stream', async (event, url) => {
+  try {
+    // 이미 변환 중이면 기존 HLS URL 반환
+    if (hlsServers[url]) {
+      return { ok: true, hlsUrl: hlsServers[url].hlsUrl, port: hlsServers[url].port };
+    }
+
+    // RTMP/MPEG-TS 확인
+    const isRtmp = url.startsWith('rtmp://');
+    const isMpegTs = url.endsWith('.ts') || url.includes('.ts?');
+    
+    if (!isRtmp && !isMpegTs) {
+      // HLS/M3U8은 직접 반환
+      return { ok: true, hlsUrl: url, port: null };
+    }
+
+    // 사용 가능한 포트 찾기
+    const port = await findAvailablePort();
+    const hlsUrl = `http://127.0.0.1:${port}/stream.m3u8`;
+    const tmpDir = path.join(app.getPath('userData'), 'hls-tmp');
+    
+    if (!fs.existsSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, { recursive: true });
+    }
+
+    const timestamp = Date.now();
+    const segmentPath = path.join(tmpDir, `seg-%03d-${timestamp}.ts`);
+    const playlistFile = path.join(tmpDir, `playlist-${timestamp}.m3u8`);
+
+    console.log(`[FFmpeg] Converting: ${url} → HLS at http://127.0.0.1:${port}`);
+
+    // FFmpeg 프로세스 시작
+    const ffmpegCmd = ffmpeg(url)
+      .inputOptions([
+        '-rtsp_transport', 'tcp',
+        '-allowed_extensions', 'ALL',
+        '-protocol_whitelist', 'file,http,https,tcp,tls,rtmp,rtp'
+      ])
+      .outputOptions([
+        '-c:v', 'copy',           // 비디오 코덱 복사 (재인코딩 X)
+        '-c:a', 'aac',            // 오디오 AAC
+        '-f', 'hls',              // HLS 포맷
+        '-hls_time', '2',         // 세그먼트 길이 2초
+        '-hls_list_size', '5',    // 재생목록 최대 5개
+        '-hls_wrap', '10',        // 순환
+        '-hls_flags', 'delete_segments',
+        '-start_number', '0'
+      ])
+      .output(playlistFile)
+      .on('error', (err) => {
+        console.error(`[FFmpeg] Error (${url}): ${err.message}`);
+        delete ffmpegProcesses[url];
+        delete hlsServers[url];
+      })
+      .on('end', () => {
+        console.log(`[FFmpeg] Stream ended: ${url}`);
+        delete ffmpegProcesses[url];
+        delete hlsServers[url];
+      });
+
+    // 간단한 HTTP 서버로 HLS 파일 제공
+    const http = require('http');
+    const server = http.createServer((req, res) => {
+      try {
+        if (req.url === '/stream.m3u8') {
+          const content = fs.readFileSync(playlistFile, 'utf8');
+          res.writeHead(200, { 'Content-Type': 'application/vnd.apple.mpegurl' });
+          res.end(content);
+        } else if (req.url.endsWith('.ts')) {
+          const file = path.join(tmpDir, req.url.split('/').pop());
+          if (fs.existsSync(file)) {
+            res.writeHead(200, { 'Content-Type': 'video/MP2T' });
+            res.end(fs.readFileSync(file));
+          } else {
+            res.writeHead(404);
+            res.end('Not found');
+          }
+        } else {
+          res.writeHead(404);
+          res.end('Not found');
+        }
+      } catch (e) {
+        res.writeHead(500);
+        res.end(e.message);
+      }
+    });
+
+    server.listen(port, '127.0.0.1', () => {
+      console.log(`[HLS Server] Listening on port ${port}`);
+      ffmpegCmd.run();
+    });
+
+    ffmpegProcesses[url] = ffmpegCmd;
+    hlsServers[url] = { port, hlsUrl, server, tmpDir };
+
+    return { ok: true, hlsUrl, port };
+  } catch (e) {
+    console.error(`[FFmpeg] Error: ${e.message}`);
+    return { ok: false, error: e.message };
+  }
+});
+
+// FFmpeg 스트림 중지
+ipcMain.handle('stop-ffmpeg-stream', async (event, url) => {
+  try {
+    if (ffmpegProcesses[url]) {
+      ffmpegProcesses[url].kill();
+      delete ffmpegProcesses[url];
+    }
+    if (hlsServers[url]) {
+      hlsServers[url].server.close();
+      delete hlsServers[url];
+    }
+    console.log(`[FFmpeg] Stream stopped: ${url}`);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
 
 const BACKUP_DIR = path.join(app.getPath('userData'), 'playlists_backups');
 
@@ -197,7 +337,6 @@ ipcMain.handle('set-current-player-pid', (event, pid) => {
 });
 
 // ===== MPV Player Support =====
-const net = require('net');
 const os = require('os');
 
 global.mpvProcess = null;
