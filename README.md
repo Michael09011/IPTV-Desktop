@@ -9,8 +9,6 @@
 [![Release](https://img.shields.io/badge/release-download-brightgreen.svg)](https://github.com/Michael09011/IPTV-Desktop/releases/tag/IPTV-Desktop)
 
 <img width="200" height="200" alt="IPTV-Desktop 앱 아이콘" src="build/icon.png" />
-<img width="1312" height="912" alt="스크린샷 2026-04-01 오전 1 47 51" src="https://github.com/user-attachments/assets/d8b2f587-ba36-4f0e-9dbb-108817317797" />
-
 
 Electron 기반 IPTV 데스크탑 앱 (플레이리스트 불러오기, 채널 재생, MPV/VLC 플레이어 지원, EPG, 자동 백업, 일본 방송 지원 등).
 
