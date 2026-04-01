@@ -10,7 +10,6 @@
 [![Mobile App](https://img.shields.io/badge/Mobile%20App-View%20on%20GitHub-blue)](https://github.com/Michael09011/IPTV-Mobile-APP)
 
 <img width="200" height="200" alt="IPTV-Desktop App Icon" src="build/icon.png" />
-<img width="1312" height="912" alt="Screenshot 2026-04-01 01 47 51" src="https://github.com/user-attachments/assets/d8b2f587-ba36-4f0e-9dbb-108817317797" />
 
 Electron-based IPTV desktop app (playlist loading, channel playback, MPV/VLC player support, EPG, auto backup, Japanese broadcast support, etc.).
 
