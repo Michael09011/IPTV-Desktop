@@ -8,6 +8,8 @@
 [![MPV Support](https://img.shields.io/badge/mpv-player-important.svg)](https://mpv.io/)
 [![Release](https://img.shields.io/badge/release-download-brightgreen.svg)](https://github.com/Michael09011/IPTV-Desktop/releases/tag/IPTV-Desktop)
 [![Mobile App](https://img.shields.io/badge/Mobile%20App-View%20on%20GitHub-blue)](https://github.com/Michael09011/IPTV-Mobile-APP)
+[![Korean](https://img.shields.io/badge/Korean-README-blue)](README.ko.md)
+[![Japanese](https://img.shields.io/badge/Japanese-README-blue)](README.ja.md)
 
 <img width="200" height="200" alt="IPTV-Desktop App Icon" src="build/icon.png" />
 
