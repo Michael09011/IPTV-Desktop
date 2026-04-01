@@ -1,4 +1,4 @@
-# IPTV-Desktop App v0.1.3 - Cross Platform (Mac Os, Win Os, Linux) 
+# IPTV-Desktop App v0.1.3 - Cross Platform (Mac OS, Win OS, Linux)
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://shields.io/)
 [![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows%20|%20Linux-blue.svg)](https://github.com)
@@ -7,237 +7,237 @@
 [![Electron](https://img.shields.io/badge/electron-26.0.0-9feaf9.svg)](https://www.electronjs.org/)
 [![MPV Support](https://img.shields.io/badge/mpv-player-important.svg)](https://mpv.io/)
 [![Release](https://img.shields.io/badge/release-download-brightgreen.svg)](https://github.com/Michael09011/IPTV-Desktop/releases/tag/IPTV-Desktop)
+[![Mobile App](https://img.shields.io/badge/Mobile%20App-View%20on%20GitHub-blue)](https://github.com/Michael09011/IPTV-Mobile-APP)
 
-<img width="200" height="200" alt="IPTV-Desktop 앱 아이콘" src="build/icon.png" />
-<img width="1312" height="912" alt="스크린샷 2026-04-01 오전 1 47 51" src="https://github.com/user-attachments/assets/d8b2f587-ba36-4f0e-9dbb-108817317797" />
+<img width="200" height="200" alt="IPTV-Desktop App Icon" src="build/icon.png" />
+<img width="1312" height="912" alt="Screenshot 2026-04-01 01 47 51" src="https://github.com/user-attachments/assets/d8b2f587-ba36-4f0e-9dbb-108817317797" />
 
+Electron-based IPTV desktop app (playlist loading, channel playback, MPV/VLC player support, EPG, auto backup, Japanese broadcast support, etc.).
 
-Electron 기반 IPTV 데스크탑 앱 (플레이리스트 불러오기, 채널 재생, MPV/VLC 플레이어 지원, EPG, 자동 백업, 일본 방송 지원 등).
+## 🏗️ Tech Stack
 
-## 🏗️ 기술 스택
-
-### 🖥️ Frontend (프론트엔드)
+### 🖥️ Frontend
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
 ![Electron](https://img.shields.io/badge/Electron-191970?style=flat-square&logo=electron&logoColor=white)
 
 - **Renderer Process**: HTML5 + CSS3 + Vanilla JavaScript
-- **HLS.js**: HLS/M3U8 스트림 재생
-- **Shaka Player**: DASH 및 SmoothStreaming 지원
-- **Video.js**: 비디오 플레이어 기반
-- **MPV Adapter**: JSON-IPC를 통한 mpv 플레이어 지원 (RTMP, MPEG-TS, 등)
+- **HLS.js**: HLS/M3U8 stream playback
+- **Shaka Player**: DASH and SmoothStreaming support
+- **Video.js**: Video player framework
+- **MPV Adapter**: JSON-IPC controlled mpv player support (RTMP, MPEG-TS, etc.)
 - **UI Framework**: Electron Renderer Process
 - **Location**: `app/` directory
 
-### ⚙️ Backend (백엔드)
+### ⚙️ Backend
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white)
 ![Electron](https://img.shields.io/badge/Electron%20Main-191970?style=flat-square&logo=electron&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
 
 - **Main Process**: Node.js + Electron Main Process
 - **API**: Preload Scripts & IPC Communication
-- **mpv Integration**: 외부 mpv 프로세스 제어 (JSON-IPC socket)
+- **mpv Integration**: External mpv process control (JSON-IPC socket)
 - **Location**: `src/` directory
 
-## 📺 플레이어 지원
+## 📺 Player Support
 
-### 내부 플레이어
-- **HLS.js**: M3U8, HLS 스트림 (기본)
+### Internal Players
+- **HLS.js**: M3U8, HLS streams (default)
 - **Shaka Player**: DASH, SmoothStreaming
-- **Video.js**: 범용 비디오 플레이어
+- **Video.js**: General video player
 - **Native HTML5 Video**: MP4, WebM, Ogg
 
-### MPV 플레이어 (새로운 기능!)
+### MPV Player (New Feature!)
 
-- **외부 프로세스 실행**: MPV 플레이어는 앱 외부에서 별도 프로세스로 실행됩니다.
-- **JSON-IPC 제어**: Electron 메인 프로세스에서 JSON-IPC 소켓을 통해 MPV를 제어합니다.
-- **다양한 포맷 지원**: RTMP, MPEG-TS, HLS, DASH 등 다양한 스트림 포맷을 지원합니다.
-- **고성능 재생**: 하드웨어 가속 및 고급 비디오 필터링을 지원합니다.
-- **설정**: 외부 플레이어 경로를 지정할 수 있으며, 기본 경로를 자동 감지합니다.
+- **External Process Execution**: MPV player runs as a separate external process.
+- **JSON-IPC Control**: Controlled from Electron main process via JSON-IPC socket.
+- **Multiple Format Support**: RTMP, MPEG-TS, HLS, DASH, and various stream formats.
+- **High Performance Playback**: Hardware acceleration and advanced video filtering.
+- **Settings**: External player path can be specified, with automatic default path detection.
 
-## 🎨 앱 아이콘
+## 🎨 App Icon
 
-앱 아이콘은 `build/icon.ico` (Windows) 및 `build/icon.icns` (macOS)에서 읽습니다. 기본 TV 스타일 아이콘을 자동 생성하려면 `python generate_icon.py`를 실행하세요(사전 설치: `pip install pillow`).
+App icons are read from `build/icon.ico` (Windows) and `build/icon.icns` (macOS). To generate a default TV-style icon automatically, run `python generate_icon.py` (requires `pip install pillow`).
 
-아이콘을 직接 만들려면:
-1. 1024×1024px 이상의 PNG로 TV 실루엣을 그립니다.
-2. `.ico`는 [icoconvert.com](https://icoconvert.com/) 또는 ImageMagick/`convert` 사용, `.icns`는 macOS `iconutil`로 변환.
-3. 생성된 파일을 `build/`에 넣고 커밋하면 빌드시 자동 반영됩니다.
+To create icons manually:
+1. Draw a TV silhouette in PNG format (1024×1024px or larger).
+2. For `.ico`: Use [icoconvert.com](https://icoconvert.com/) or ImageMagick/`convert`. For `.icns`: Use macOS `iconutil`.
+3. Place generated files in `build/` and commit; they will be included in builds automatically.
 
-> 빌드 설정은 `package.json`에서 이미 `build/icon.ico`와 `build/icon.icns`를 가리킵니다.
+> Build settings already point to `build/icon.ico` and `build/icon.icns` in `package.json`.
 
-## � 다운로드
+## 📥 Download
 
-최신 릴리즈를 다운로드하세요:
+Download the latest release:
 
-🔗 **[릴리즈 페이지로 이동](https://github.com/Michael09011/IPTV-Desktop/releases/tag/IPTV-Desktop)**
+🔗 **[Go to Release Page](https://github.com/Michael09011/IPTV-Desktop/releases/tag/IPTV-Desktop)**
 
-- 🍎 **macOS**: DMG 파일 
-- 🪟 **Windows**: NSIS 설치 프로그램
+- 🍎 **macOS**: DMG file
+- 🪟 **Windows**: NSIS installer
 
-## �🚀 빠른 시작
+## 🚀 Quick Start
 
-1. **의존성 설치**
+1. **Install Dependencies**
    ```bash
    npm install
    ```
-2. **개발 모드 실행**
+2. **Run in Development Mode**
    ```bash
    npm start
    ```
 
-3. **설정 메뉴**
-   - 플레이리스트마다 EPG URL 지정 가능
-   - EPG 기능 켜기/끄기
-   - M3U 및 EPG 자동 갱신 간격(6/12/24시간) 설정
-   - 자동 갱신 완료/실패 시 토스트 알림
-   - GPU, 캐시, 자동 백업/갱신 옵션 지원
-   - 네트워크 버퍼: 자동/수동 모드 선택, 수동 시 버퍼 길이 조정 (기본 30초, 권장 60~120초)
-   - 외부 플레이어: VLC 등 외부 플레이어 사용 시 경로 지정 (기본 경로 자동 감지, 수동 지정 가능)
-   - 언어 변경 옵션: 앱 UI 언어를 한국어/영어/일본어 등으로 바로 전환 가능 (v0.1.3 추가)
+3. **Settings Menu**
+   - Specify EPG URL per playlist
+   - Enable/disable EPG feature
+   - Set M3U and EPG auto-refresh intervals (6/12/24 hours)
+   - Toast notifications for auto-refresh completion/failure
+   - GPU, cache, auto backup/refresh options
+   - Network buffer: Auto/manual mode, adjust buffer length in manual mode (default 30s, recommended 60~120s)
+   - External player: Specify path for VLC or other external players (auto-detect default path, manual input possible)
+   - Language change option: Switch app UI language to Korean/English/Japanese, etc. (added in v0.1.3)
 
-3. **플랫폼별 빌드 테스트** (Windows/macOS 공통 설정이 적용되어 있음)
+3. **Platform-Specific Build Testing** (Common settings applied for Windows/macOS)
    ```bash
-   # Windows 전용: NSIS 설치형 + 포터블
+   # Windows only: NSIS installer + portable
    npm run dist:win
    
-   # macOS 전용 (맥에서만 실행 가능)
+   # macOS only (must run on Mac)
    npm run dist:mac
    
-   # 양쪽 플랫폼 모두 생성 (맥에서 실행)
+   # Both platforms (run on Mac)
    npm run dist:all
    ```
 
-## 📦 번들(배포용) 만들기
+## 📦 Building Bundles (For Distribution)
 
 ### 🪟 Windows
-- 설치형(NSIS) + 포터블
+- Installer (NSIS) + Portable
   ```bash
   npm run dist:win
-  # 결과: dist/IPTV-Desktop Setup 0.1.0.exe
+  # Output: dist/IPTV-Desktop Setup 0.1.0.exe
   #         dist/IPTV-Desktop-Portable.exe
   ```
 
-### 🍎 macOS (build tool은 macOS에서 실행해야 합니다)
-- 기본 DMG (x64)
+### 🍎 macOS (build tool must run on macOS)
+- Default DMG (x64)
   ```bash
   npm run dist:mac
-  # 결과: dist/IPTV-Desktop-Mac-0.1.0.dmg
+  # Output: dist/IPTV-Desktop-Mac-0.1.0.dmg
   ```
 - Universal (x64 + arm64)
   ```bash
   npx electron-builder --mac --x64 --arm64
   ```
 
-### 🌍 전체 플랫폼
-- macOS에서 실행하면 두 플랫폼 모두:
+### 🌍 All Platforms
+- Running on macOS builds for both platforms:
   ```bash
   npm run dist:all
   ```
 
-## 🔍 앱 실행 / 검사
-- DMG 열기(설치 창): `open dist/IPTV-Desktop-0.1.0.dmg`
-- .app 직접 실행: `open dist/IPTV-Desktop.app`
-- 앱 내부 리소스 확인: `ls -la dist/IPTV-Desktop.app/Contents/Resources/app`
+## 🔍 App Execution / Inspection
+- Open DMG (installer window): `open dist/IPTV-Desktop-0.1.0.dmg`
+- Run .app directly: `open dist/IPTV-Desktop.app`
+- Check app internal resources: `ls -la dist/IPTV-Desktop.app/Contents/Resources/app`
 
-## ⚠️ 중요 동작 / 주의사항
+## ⚠️ Important Behavior / Notes
 
-- **최초 실행 시 재생목록 초기화**
-  - 패키지화된 (번들) 앱이 처음 실행될 때 기존 `playlists.json`을 빈 배열로 초기화합니다.
-  - 초기화는 한 번만 수행되며 사용자 데이터 폴더에 `playlists_cleared_v1`(sentinel) 파일을 생성해 다시 초기화되지 않도록 합니다.
-  - 개발환경에서 초기화를 재검증하려면 사용자 계정의 앱 `userData` 폴더에서 해당 sentinel 파일을 삭제하세요.
+- **Playlist Initialization on First Run**
+  - Packaged (bundled) apps initialize existing `playlists.json` to an empty array on first run.
+  - Initialization happens only once, creating a `playlists_cleared_v1` (sentinel) file in the user data folder to prevent re-initialization.
+  - To re-verify initialization in development, delete the sentinel file from the app's `userData` folder.
 
-- **사이드바 토글**
-  - 화면 왼쪽 상단에 고정된 토글 버튼(◀/▶)이 있습니다. 클릭하면 사이드바가 접히거나 펼쳐집니다.
-  - 토글은 레이아웃을 직접 갱신하므로 비디오 재생이 중단되지 않습니다.
+- **Sidebar Toggle**
+  - Fixed toggle button (◀/▶) in top-left corner. Clicking toggles sidebar expand/collapse.
+  - Toggle updates layout directly without interrupting video playback.
 
-- **코드 서명 / 공증**
-  - 현재 빌드는 코드 서명이 적용되어 있지 않습니다. 배포(앱스토어 외 배포 포함)를 위해서는 Apple Developer 계정의 Developer ID 인증서로 서명하고 공증해야 합니다.
-  - electron-builder 설정과 Apple 인증서 준비 방법은 electron-builder 문서(https://www.electron.build/code-signing)를 참고하세요.
+- **Code Signing / Notarization**
+  - Current builds are not code-signed. For distribution (including outside App Store), sign with Apple Developer account's Developer ID certificate and notarize.
+  - Refer to electron-builder docs (https://www.electron.build/code-signing) for electron-builder settings and certificate preparation.
 
-## 🐛 디버깅/로그
-- 개발 중 콘솔 로그는 `npm start`로 실행한 터미널 및 개발자 도구(Inspect)에서 확인하세요.
+## 🐛 Debugging/Logs
+- During development, check console logs in the terminal running `npm start` and developer tools (Inspect).
 
-## 📂 프로젝트 구조
+## 📂 Project Structure
 
-- **프론트엔드**: `app/` (HTML, CSS, Vanilla JavaScript)
-- **백엔드**: `src/` (메인 프로세스, Preload Scripts)
-- **빌드 결과**: `dist/` (`.dmg`, `.exe` 등)
-- **리소스**: `assets/`, `build/` (아이콘 등)
+- **Frontend**: `app/` (HTML, CSS, Vanilla JavaScript)
+- **Backend**: `src/` (Main Process, Preload Scripts)
+- **Build Output**: `dist/` (`.dmg`, `.exe`, etc.)
+- **Resources**: `assets/`, `build/` (icons, etc.)
 
-## 🔐 인증이 필요한 스트림
+## 🔐 Authentication for Streams
 
-특정 URL 패턴에 대해 HTTP 헤더를 추가할 수 있습니다.
+HTTP headers can be added for specific URL patterns.
 
 ```javascript
-// Authorization 헤더 추가
+// Add Authorization header
 window.electronAPI.authSet({
   pattern: 'example.com',
   useRegex: false,
   headers: { Authorization: 'Bearer TOKEN' }
 });
 
-// 설정된 인증 목록 조회
+// List configured authentications
 window.electronAPI.authList().then(console.log);
 ```
 
-## 💻 시스템 요구사항
+## 💻 System Requirements
 
-- **macOS**: 10.13 이상
-- **Windows**: Windows 7 이상
-- **Node.js**: 18.0.0 이상
-- **디스크 공간**: 최소 200MB
+- **macOS**: 10.13+
+- **Windows**: Windows 7+
+- **Node.js**: 18.0.0+
+- **Disk Space**: Minimum 200MB
 
-## ⭐ 즐겨찾기 기능 사용법
+## ⭐ Favorites Feature Usage
 
-- **즐겨찾기 추가**: 채널 목록에서 별표(☆) 버튼을 클릭하면 즐겨찾기에 추가됩니다. 이미 추가된 항목은 별표가 채워진(★) 상태로 표시됩니다.
-- **즐겨찾기 관리**: 메인 화면 왼쪽 사이드바에서 `즐겨찾기 (N)` 버튼을 클릭하면 즐겨찾기 관리 모달이 열립니다. 모달에서 이름과 그룹을 편집하거나 항목을 재생/삭제할 수 있습니다.
-- **검색/필터**: 채널 화면에서 검색창에 여러 토큰을 입력하면 이름/그룹/TVG/URL에서 토큰을 모두 포함하는 항목만 표시됩니다. `즐겨찾기만` 체크박스로 즐겨찾기 항목만 필터링할 수 있습니다.
-- **EPG 기능**: 각 채널의 현재 방송 정보가 표시됩니다. 설정에서 켜/끄기 가능하며, 플레이리스트별로 EPG URL을 지정할 수 있습니다.
-- **자동 갱신**: M3U 및 EPG 데이터를 6/12/24시간 간격으로 자동 갱신하도록 설정할 수 있습니다. 갱신 시 토스트 알림이 표시됩니다.
-- **내보내기/가져오기**: 즐겨찾기 목록을 JSON으로 내보내거나(브라우저 다운로드) 가져올 수 있습니다.
-- **파일 동기화**: 시스템 파일로 저장하거나 파일에서 불러오는 기능이 추가되었습니다. `파일에 저장` / `파일에서 불러오기` 버튼을 사용하면 로컬 파일에 직접 저장하거나 불러올 수 있습니다.
+- **Add to Favorites**: Click the star (☆) button in the channel list to add to favorites. Added items show filled star (★).
+- **Manage Favorites**: Click `Favorites (N)` button in the left sidebar to open favorites management modal. Edit name/group or play/delete items.
+- **Search/Filter**: Enter multiple tokens in search box on channel screen to filter items containing all tokens in name/group/TVG/URL. Check `Favorites only` to filter to favorites.
+- **EPG Feature**: Current broadcast info shown for each channel. Can be enabled/disabled in settings, EPG URL specifiable per playlist.
+- **Auto Refresh**: Set M3U and EPG data auto-refresh every 6/12/24 hours. Toast notifications on refresh.
+- **Export/Import**: Export/import favorites list as JSON (browser download).
+- **File Sync**: Added save/load to system files. Use `Save to File` / `Load from File` buttons to save/load directly to local files.
 
-## 🧪 간단 테스트
+## 🧪 Simple Testing
 
-1. **앱 실행**:
+1. **Run App**:
    ```bash
    npm start
    ```
-2. **플레이리스트 열기**: 좌측 상단 `불러오기`에서 m3u 파일 또는 URL로 재생목록을 불러옵니다.
-3. **채널 화면 진입**: 재생목록의 `채널 보기` 버튼을 클릭합니다.
-4. **즐겨찾기 추가/제거**: 채널 항목의 별표 버튼을 클릭해 추가/제거합니다.
-5. **즐겨찾기 파일 저장/불러오기**: 채널 화면의 `파일에 저장` 버튼으로 favorites.json을 저장하고, `파일에서 불러오기` 버튼으로 다시 불러옵니다.
+2. **Load Playlist**: Click `Load` in top-left to load m3u file or URL.
+3. **Enter Channel Screen**: Click `View Channels` on playlist.
+4. **Add/Remove Favorites**: Click star button on channel items to add/remove.
+5. **Save/Load Favorites File**: Use `Save to File` button to save favorites.json, `Load from File` to reload.
 
-## � Windows MPV 설치 및 사용 안내
+## 📱 Windows MPV Installation and Usage Guide
 
-Windows에서 MPV 플레이어를 이용하려면 다음을 따라주세요.
+To use MPV player on Windows, follow these steps.
 
-1. MPV 설치
-   - Chocolatey 사용:
-     - 관리자 PowerShell에서 `choco install mpv` 실행
-   - Scoop 사용:
+1. Install MPV
+   - Using Chocolatey:
+     - Run `choco install mpv` in admin PowerShell
+   - Using Scoop:
      - `scoop install mpv`
-   - 또는 https://mpv.io/ 에서 Windows 빌드 다운로드 후 압축 해제
-2. MPV 경로 확인
-   - `mpv.exe` 위치를 복사합니다.
-   - 예: `C:\Program Files\mpv\mpv.exe`
-3. IPTV-Desktop에서 설정
-   - 설정 버튼 클릭
-   - "외부 플레이어 사용" 활성화
-   - 외부 플레이어 경로를 `mpv.exe` 경로로 입력
-4. MPV 재생 테스트
-   - 플레이리스트에서 채널 선택 후 재생
-   - 문제가 있으면 경로와 실행 권한을 다시 확인
+   - Or download Windows build from https://mpv.io/ and extract
+2. Verify MPV Path
+   - Copy `mpv.exe` location.
+   - Example: `C:\Program Files\mpv\mpv.exe`
+3. Configure in IPTV-Desktop
+   - Click settings button
+   - Enable "Use External Player"
+   - Enter `mpv.exe` path as external player path
+4. Test MPV Playback
+   - Select channel from playlist and play
+   - If issues, recheck path and permissions
 
-추가 팁:
-- `mpv.conf`를 사용해 버퍼, 캔들, 자막 등을 조정할 수 있습니다.
-- Windows에서 UAC로 권한 문제가 발생하면 관리자 권한으로 실행하세요.
+Additional Tips:
+- Use `mpv.conf` to adjust buffer, cache, subtitles, etc.
+- If UAC permission issues on Windows, run as administrator.
 
 ---
 
-## �📝 라이선스
+## 📝 License
 
 © 2026 Michael. All rights reserved.
 
@@ -245,4 +245,4 @@ MIT License - see LICENSE file for details
 
 ---
 
-문제가 있거나 추가 개선(그룹 폴더 트리, 원격 동기화 등)을 원하시면 이슈를 등록해주세요.
+If you have issues or want additional improvements (group folder tree, remote sync, etc.), please open an issue.
