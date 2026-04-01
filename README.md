@@ -1,4 +1,4 @@
-# IPTV-Desktop App v0.1.3 - Cross Platform (Mac Os, Win Os, Linux) 
+# IPTV-Desktop App v0.1.2 - Cross Platform (Mac Os, Win Os, Linux) 
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://shields.io/)
 [![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows%20|%20Linux-blue.svg)](https://github.com)
@@ -12,7 +12,7 @@
 
 <img width="1312" height="912" alt="스크린샷 2026-02-27 오후 1 17 17" src="https://github.com/user-attachments/assets/115ef9da-a3b9-4f74-800f-0de7f5701ec6" />
 
-Electron 기반 IPTV 데스크탑 앱 (플레이리스트 불러오기, 채널 재생, MPV/VLC 플레이어 지원, EPG, 자동 백업 등).
+Electron 기반 IPTV 데스크탑 앱 (플레이리스트 불러오기, 채널 재생, MPV/VLC 플레이어 지원, EPG, 자동 백업, 일본 방송 지원 등).
 
 ## 🏗️ 기술 스택
 
@@ -49,6 +49,12 @@ Electron 기반 IPTV 데스크탑 앱 (플레이리스트 불러오기, 채널 �
 - **Native HTML5 Video**: MP4, WebM, Ogg
 
 ### MPV 플레이어 (새로운 기능!)
+
+- **외부 프로세스 실행**: MPV 플레이어는 앱 외부에서 별도 프로세스로 실행됩니다.
+- **JSON-IPC 제어**: Electron 메인 프로세스에서 JSON-IPC 소켓을 통해 MPV를 제어합니다.
+- **다양한 포맷 지원**: RTMP, MPEG-TS, HLS, DASH 등 다양한 스트림 포맷을 지원합니다.
+- **고성능 재생**: 하드웨어 가속 및 고급 비디오 필터링을 지원합니다.
+- **설정**: 외부 플레이어 경로를 지정할 수 있으며, 기본 경로를 자동 감지합니다.
 
 ## 🎨 앱 아이콘
 
