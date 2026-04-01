@@ -1,4 +1,4 @@
-# IPTV-Desktop App v0.1.2 - Cross Platform (Mac Os, Win Os, Linux) 
+# IPTV-Desktop App v0.1.3 - Cross Platform (Mac Os, Win Os, Linux) 
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://shields.io/)
 [![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows%20|%20Linux-blue.svg)](https://github.com)
@@ -95,6 +95,7 @@ Electron 기반 IPTV 데스크탑 앱 (플레이리스트 불러오기, 채널 �
    - GPU, 캐시, 자동 백업/갱신 옵션 지원
    - 네트워크 버퍼: 자동/수동 모드 선택, 수동 시 버퍼 길이 조정 (기본 30초, 권장 60~120초)
    - 외부 플레이어: VLC 등 외부 플레이어 사용 시 경로 지정 (기본 경로 자동 감지, 수동 지정 가능)
+   - 언어 변경 옵션: 앱 UI 언어를 한국어/영어/일본어 등으로 바로 전환 가능 (v0.1.3 추가)
 
 3. **플랫폼별 빌드 테스트** (Windows/macOS 공통 설정이 적용되어 있음)
    ```bash
@@ -209,7 +210,34 @@ window.electronAPI.authList().then(console.log);
 4. **즐겨찾기 추가/제거**: 채널 항목의 별표 버튼을 클릭해 추가/제거합니다.
 5. **즐겨찾기 파일 저장/불러오기**: 채널 화면의 `파일에 저장` 버튼으로 favorites.json을 저장하고, `파일에서 불러오기` 버튼으로 다시 불러옵니다.
 
-## 📝 라이선스
+## � Windows MPV 설치 및 사용 안내
+
+Windows에서 MPV 플레이어를 이용하려면 다음을 따라주세요.
+
+1. MPV 설치
+   - Chocolatey 사용:
+     - 관리자 PowerShell에서 `choco install mpv` 실행
+   - Scoop 사용:
+     - `scoop install mpv`
+   - 또는 https://mpv.io/ 에서 Windows 빌드 다운로드 후 압축 해제
+2. MPV 경로 확인
+   - `mpv.exe` 위치를 복사합니다.
+   - 예: `C:\Program Files\mpv\mpv.exe`
+3. IPTV-Desktop에서 설정
+   - 설정 버튼 클릭
+   - "외부 플레이어 사용" 활성화
+   - 외부 플레이어 경로를 `mpv.exe` 경로로 입력
+4. MPV 재생 테스트
+   - 플레이리스트에서 채널 선택 후 재생
+   - 문제가 있으면 경로와 실행 권한을 다시 확인
+
+추가 팁:
+- `mpv.conf`를 사용해 버퍼, 캔들, 자막 등을 조정할 수 있습니다.
+- Windows에서 UAC로 권한 문제가 발생하면 관리자 권한으로 실행하세요.
+
+---
+
+## �📝 라이선스
 
 © 2026 Michael. All rights reserved.
 

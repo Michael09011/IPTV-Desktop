@@ -11,6 +11,59 @@ try {
   console.error('❌ Window 리사이즈 실패:', e);
 }
 
+// Internationalization
+let currentLanguage = localStorage.getItem('language') || 'ko';
+let translations = {};
+
+async function loadTranslations(lang) {
+  try {
+    const response = await fetch(`./locales/${lang}.json`);
+    translations = await response.json();
+  } catch (e) {
+    console.error('Failed to load translations:', e);
+    translations = {};
+  }
+}
+
+function t(key, fallback = key) {
+  const keys = key.split('.');
+  let value = translations;
+  for (const k of keys) {
+    value = value?.[k];
+    if (value === undefined) return fallback;
+  }
+  return value || fallback;
+}
+
+async function setLanguage(lang) {
+  currentLanguage = lang;
+  await loadTranslations(lang);
+  updateUIText();
+}
+
+function updateUIText() {
+  // Update header buttons
+  document.getElementById('favoritesBtn').textContent = t('favorites');
+  document.getElementById('openUrlBtn').textContent = t('loadUrl');
+  document.getElementById('settingsBtn').textContent = t('settings');
+  document.getElementById('openBtn').textContent = t('addPlaylist');
+
+  // Update sidebar if visible
+  updateSidebarText();
+}
+
+function updateSidebarText() {
+  // This will be called when sidebar content changes
+  const searchInput = document.querySelector('input[placeholder*="검색"]');
+  if (searchInput) searchInput.placeholder = t('search');
+
+  const groupSelect = document.querySelector('select');
+  if (groupSelect) {
+    const allOption = groupSelect.querySelector('option[value="All"]');
+    if (allOption) allOption.textContent = t('all');
+  }
+}
+
 const root = document.getElementById('root');
 const openBtn = document.getElementById('openBtn');
 let searchInput;
@@ -161,7 +214,11 @@ attachOpenBtn();
 document.addEventListener('DOMContentLoaded', attachOpenBtn);
 
 // wire settings button (exists in index.html header)
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // Load translations
+  await loadTranslations(currentLanguage);
+  updateUIText();
+
   const sbtn = document.getElementById('settingsBtn');
   if (sbtn) sbtn.addEventListener('click', showSettingsModal);
   const openUrlBtn = document.getElementById('openUrlBtn');
@@ -191,17 +248,49 @@ async function showSettingsModal() {
   const settings = await window.electronAPI.settingsGet().catch(()=> ({}));
   const modal = document.createElement('div'); modal.style.position='fixed'; modal.style.left=0; modal.style.top=0; modal.style.right=0; modal.style.bottom=0; modal.style.zIndex='10000'; modal.style.display='flex'; modal.style.alignItems='center'; modal.style.justifyContent='center'; modal.style.background='rgba(0,0,0,0.6)';
   const body = document.createElement('div'); body.style.background='var(--card)'; body.style.padding='18px'; body.style.borderRadius='8px'; body.style.width='420px'; body.style.border='1px solid var(--border)';
-  const title = document.createElement('h3'); title.textContent='설정'; title.style.margin='0 0 12px 0'; body.appendChild(title);
+  const title = document.createElement('h3'); title.textContent = t('settings'); title.style.margin='0 0 12px 0'; body.appendChild(title);
 
   // GPU toggle
   const gpuRow = document.createElement('div'); gpuRow.style.display='flex'; gpuRow.style.alignItems='center'; gpuRow.style.gap='8px'; gpuRow.style.marginBottom='8px';
   const gpuChk = document.createElement('input'); gpuChk.type='checkbox'; gpuChk.checked = settings.disableHardwareAcceleration !== false; // default true
-  const gpuLabel = document.createElement('label'); gpuLabel.textContent='하드웨어 가속 비활성화 (재시작 필요)'; gpuRow.appendChild(gpuChk); gpuRow.appendChild(gpuLabel);
+  const gpuLabel = document.createElement('label'); gpuLabel.textContent = t('disableHardwareAccel'); gpuRow.appendChild(gpuChk); gpuRow.appendChild(gpuLabel);
   body.appendChild(gpuRow);
+
+  // Favorites-only channel filter setting
+  const favOnlyRow = document.createElement('div'); favOnlyRow.style.display='flex'; favOnlyRow.style.alignItems='center'; favOnlyRow.style.gap='8px'; favOnlyRow.style.marginBottom='8px';
+  const favOnlyChk = document.createElement('input'); favOnlyChk.type='checkbox'; favOnlyChk.checked = channelFavoritesOnly;
+  const favOnlyLabel = document.createElement('label'); favOnlyLabel.textContent = t('favoritesOnly'); favOnlyLabel.htmlFor = 'favOnlySetting';
+  favOnlyChk.id = 'favOnlySetting';
+  favOnlyRow.appendChild(favOnlyChk); favOnlyRow.appendChild(favOnlyLabel);
+  body.appendChild(favOnlyRow);
+
+  // Language selection
+  const langRow = document.createElement('div'); langRow.style.display='flex'; langRow.style.alignItems='center'; langRow.style.gap='8px'; langRow.style.marginBottom='8px';
+  const langLabel = document.createElement('label'); langLabel.textContent = t('language');
+  const langSelect = document.createElement('select'); langSelect.style.width='120px';
+  const langOptions = [
+    { value: 'ko', text: '한국어' },
+    { value: 'en', text: 'English' },
+    { value: 'ja', text: '日本語' },
+    { value: 'zh', text: '中文' },
+    { value: 'fr', text: 'Français' },
+    { value: 'de', text: 'Deutsch' },
+    { value: 'zh-TW', text: '繁體中文' },
+    { value: 'es', text: 'Español' }
+  ];
+  langOptions.forEach(opt => {
+    const option = document.createElement('option');
+    option.value = opt.value;
+    option.textContent = opt.text;
+    if (localStorage.getItem('language') === opt.value) option.selected = true;
+    langSelect.appendChild(option);
+  });
+  langRow.appendChild(langLabel); langRow.appendChild(langSelect);
+  body.appendChild(langRow);
 
   // Clear cache button
   const cacheRow = document.createElement('div'); cacheRow.style.display='flex'; cacheRow.style.gap='8px'; cacheRow.style.marginTop='8px';
-  const clearCacheBtn = document.createElement('button'); clearCacheBtn.textContent='캐시 삭제'; clearCacheBtn.onclick = async () => {
+  const clearCacheBtn = document.createElement('button'); clearCacheBtn.textContent = t('clearCache'); clearCacheBtn.onclick = async () => {
     try {
       // request main to open userData folder so user can delete Cache manually
       await window.electronAPI.playlistsOpenBackupDir();
@@ -215,7 +304,7 @@ async function showSettingsModal() {
   const autoRow = document.createElement('div'); autoRow.style.display='flex'; autoRow.style.alignItems='center'; autoRow.style.gap='8px'; autoRow.style.marginTop='8px';
   const autoChk = document.createElement('input'); autoChk.type='checkbox'; autoChk.checked = localStorage.getItem('autoBackupEnabled') === '1';
   const minutesInput = document.createElement('input'); minutesInput.type='number'; minutesInput.min='1'; minutesInput.style.width='64px'; minutesInput.value = localStorage.getItem('autoBackupMinutes') || '60';
-  const autoLabel = document.createElement('label'); autoLabel.textContent = '자동 백업 (분)'; autoRow.appendChild(autoChk); autoRow.appendChild(autoLabel); autoRow.appendChild(minutesInput);
+  const autoLabel = document.createElement('label'); autoLabel.textContent = t('autoBackup') + ' (' + t('minutes') + ')'; autoRow.appendChild(autoChk); autoRow.appendChild(autoLabel); autoRow.appendChild(minutesInput);
   body.appendChild(autoRow);
 
   // Auto-refresh settings for remote playlists
@@ -223,9 +312,9 @@ async function showSettingsModal() {
   const refreshChk = document.createElement('input'); refreshChk.type='checkbox'; refreshChk.checked = localStorage.getItem('autoRefreshEnabled') === '1';
   const refreshSelect = document.createElement('select'); refreshSelect.style.width='80px';
   const refreshOptions = [
-    { value: '360', text: '6시간' },
-    { value: '720', text: '12시간' },
-    { value: '1440', text: '24시간' }
+    { value: '360', text: t('hours6') },
+    { value: '720', text: t('hours12') },
+    { value: '1440', text: t('hours24') }
   ];
   refreshOptions.forEach(opt => {
     const option = document.createElement('option');
@@ -234,7 +323,7 @@ async function showSettingsModal() {
     if (localStorage.getItem('autoRefreshMinutes') === opt.value) option.selected = true;
     refreshSelect.appendChild(option);
   });
-  const refreshLabel = document.createElement('label'); refreshLabel.textContent = 'M3U 자동 갱신';
+  const refreshLabel = document.createElement('label'); refreshLabel.textContent = t('autoRefreshM3U');
   refreshRow.appendChild(refreshChk); refreshRow.appendChild(refreshLabel); refreshRow.appendChild(refreshSelect);
   body.appendChild(refreshRow);
 
@@ -243,9 +332,9 @@ async function showSettingsModal() {
   const epgRefreshChk = document.createElement('input'); epgRefreshChk.type='checkbox'; epgRefreshChk.checked = localStorage.getItem('epgAutoRefreshEnabled') === '1';
   const epgRefreshSelect = document.createElement('select'); epgRefreshSelect.style.width='80px';
   const epgRefreshOptions = [
-    { value: '360', text: '6시간' },
-    { value: '720', text: '12시간' },
-    { value: '1440', text: '24시간' }
+    { value: '360', text: t('hours6') },
+    { value: '720', text: t('hours12') },
+    { value: '1440', text: t('hours24') }
   ];
   epgRefreshOptions.forEach(opt => {
     const option = document.createElement('option');
@@ -254,16 +343,43 @@ async function showSettingsModal() {
     if (localStorage.getItem('epgAutoRefreshMinutes') === opt.value) option.selected = true;
     epgRefreshSelect.appendChild(option);
   });
-  const epgRefreshLabel = document.createElement('label'); epgRefreshLabel.textContent = 'EPG 자동 갱신';
+  const epgRefreshLabel = document.createElement('label'); epgRefreshLabel.textContent = t('autoRefreshEPG');
   epgRefreshRow.appendChild(epgRefreshChk); epgRefreshRow.appendChild(epgRefreshLabel); epgRefreshRow.appendChild(epgRefreshSelect);
   body.appendChild(epgRefreshRow);
 
   // EPG settings
   const epgRow = document.createElement('div'); epgRow.style.display='flex'; epgRow.style.alignItems='center'; epgRow.style.gap='8px'; epgRow.style.marginTop='8px';
   const epgChk = document.createElement('input'); epgChk.type='checkbox'; epgChk.checked = localStorage.getItem('epgEnabled') === '1';
-  const epgLabel = document.createElement('label'); epgLabel.textContent = 'EPG 기능 활성화';
+  const epgLabel = document.createElement('label'); epgLabel.textContent = t('enableEPG');
   epgRow.appendChild(epgChk); epgRow.appendChild(epgLabel);
   body.appendChild(epgRow);
+
+  // Version and GitHub link
+  const versionRow = document.createElement('div'); versionRow.style.marginTop='16px'; versionRow.style.paddingTop='12px'; versionRow.style.borderTop='1px solid var(--border)'; versionRow.style.textAlign='center';
+  const versionText = document.createElement('div'); versionText.style.fontSize='12px'; versionText.style.color='var(--text-muted)'; versionText.textContent = t('version');
+  const githubLink = document.createElement('a'); githubLink.href='#'; githubLink.textContent = t('visitReleases'); githubLink.style.fontSize='12px'; githubLink.style.color='var(--primary)'; githubLink.style.textDecoration='none'; githubLink.style.display='block'; githubLink.style.marginTop='4px';
+  githubLink.onclick = (e) => {
+    e.preventDefault();
+    window.electronAPI.openExternal('https://github.com/Michael09011/IPTV-Desktop/releases');
+  };
+  versionRow.appendChild(versionText);
+  versionRow.appendChild(githubLink);
+  body.appendChild(versionRow);
+
+  // License section
+  const licenseRow = document.createElement('div'); licenseRow.style.marginTop='16px'; licenseRow.style.paddingTop='12px'; licenseRow.style.borderTop='1px solid var(--border)';
+  const licenseTitle = document.createElement('h4'); licenseTitle.textContent = t('license'); licenseTitle.style.margin='0 0 8px 0'; licenseTitle.style.fontSize='14px';
+  licenseRow.appendChild(licenseTitle);
+  const licenseText = document.createElement('div'); licenseText.style.fontSize='11px'; licenseText.style.lineHeight='1.4'; licenseText.style.color='var(--text-muted)'; licenseText.style.maxHeight='120px'; licenseText.style.overflowY='auto';
+  licenseText.innerHTML = `
+    <strong>MIT License</strong><br>
+    Copyright (c) 2026 Michael<br><br>
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:<br><br>
+    The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.<br><br>
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  `;
+  licenseRow.appendChild(licenseText);
+  body.appendChild(licenseRow);
 
   // Network buffer settings
   const bufferRow = document.createElement('div'); bufferRow.style.display='flex'; bufferRow.style.alignItems='center'; bufferRow.style.gap='8px'; bufferRow.style.marginTop='8px';
@@ -279,7 +395,7 @@ async function showSettingsModal() {
     if (localStorage.getItem('bufferMode') === opt.value) option.selected = true;
     bufferModeSelect.appendChild(option);
   });
-  const bufferLabel = document.createElement('label'); bufferLabel.textContent = '네트워크 버퍼';
+  const bufferLabel = document.createElement('label'); bufferLabel.textContent = t('networkBuffer');
   const bufferInput = document.createElement('input'); bufferInput.type='number'; bufferInput.min='10'; bufferInput.max='300'; bufferInput.step='5'; bufferInput.style.width='64px'; bufferInput.value = localStorage.getItem('maxBufferLength') || '30';
   bufferInput.disabled = localStorage.getItem('bufferMode') !== 'manual';
   bufferModeSelect.onchange = () => { bufferInput.disabled = bufferModeSelect.value !== 'manual'; };
@@ -289,7 +405,7 @@ async function showSettingsModal() {
   // External player settings
   const externalRow = document.createElement('div'); externalRow.style.display='flex'; externalRow.style.alignItems='center'; externalRow.style.gap='8px'; externalRow.style.marginTop='8px';
   const externalChk = document.createElement('input'); externalChk.type='checkbox'; externalChk.checked = localStorage.getItem('useExternalPlayer') === '1';
-  const externalLabel = document.createElement('label'); externalLabel.textContent = '외부 플레이어 사용';
+  const externalLabel = document.createElement('label'); externalLabel.textContent = t('useExternalPlayer');
   const playerSelect = document.createElement('select'); playerSelect.style.width='80px';
   const playerOptions = [
     { value: 'vlc', text: 'VLC' },
@@ -309,14 +425,14 @@ async function showSettingsModal() {
   // MPV player settings (NEW)
   const mpvRow = document.createElement('div'); mpvRow.style.display='flex'; mpvRow.style.alignItems='center'; mpvRow.style.gap='8px'; mpvRow.style.marginTop='8px';
   const mpvChk = document.createElement('input'); mpvChk.type='checkbox'; mpvChk.checked = localStorage.getItem('useMpvPlayer') === '1';
-  const mpvLabel = document.createElement('label'); mpvLabel.textContent = 'MPV 플레이어 사용 (RTMP, MPEG-TS, HLS, DASH)';
-  const mpvNote = document.createElement('small'); mpvNote.textContent = '⚠️ macOS에서 mpv 설치 필요: brew install mpv'; mpvNote.style.display='block'; mpvNote.style.marginTop='4px'; mpvNote.style.color='var(--text-muted)'; mpvNote.style.fontSize='11px';
+  const mpvLabel = document.createElement('label'); mpvLabel.textContent = t('useMPVPlayer');
+  const mpvNote = document.createElement('small'); mpvNote.textContent = t('mpvNote'); mpvNote.style.display='block'; mpvNote.style.marginTop='4px'; mpvNote.style.color='var(--text-muted)'; mpvNote.style.fontSize='11px';
   mpvRow.appendChild(mpvChk); mpvRow.appendChild(mpvLabel);
   body.appendChild(mpvRow);
   body.appendChild(mpvNote);
 
   const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px'; actions.style.marginTop='12px'; actions.style.justifyContent='flex-end';
-  const restartBtn = document.createElement('button'); restartBtn.textContent='저장'; restartBtn.className='primary'; restartBtn.onclick = async () => {
+  const restartBtn = document.createElement('button'); restartBtn.textContent = t('save'); restartBtn.className='primary'; restartBtn.onclick = async () => {
     // save setting then restart only if GPU setting changed
     const currentGpuSetting = settings.disableHardwareAcceleration !== false;
     const newGpuSetting = !!gpuChk.checked;
@@ -329,6 +445,13 @@ async function showSettingsModal() {
     localStorage.setItem('epgAutoRefreshEnabled', epgRefreshChk.checked ? '1' : '0');
     localStorage.setItem('epgAutoRefreshMinutes', epgRefreshSelect.value || '360');
     localStorage.setItem('epgEnabled', epgChk.checked ? '1' : '0');
+    localStorage.setItem('channelFavoritesOnly', favOnlyChk.checked ? '1' : '0');
+    channelFavoritesOnly = favOnlyChk.checked;
+    localStorage.setItem('language', langSelect.value || 'ko');
+    // 언어 변경 시 즉시 적용
+    if (currentLanguage !== langSelect.value) {
+      await setLanguage(langSelect.value);
+    }
     localStorage.setItem('bufferMode', bufferModeSelect.value || 'auto');
     localStorage.setItem('maxBufferLength', bufferInput.value || '30');
     localStorage.setItem('useExternalPlayer', externalChk.checked ? '1' : '0');
@@ -340,14 +463,14 @@ async function showSettingsModal() {
     scheduleAutoEPGRefresh();
     
     if (currentGpuSetting !== newGpuSetting) {
-      showToast('GPU 설정 변경으로 앱 재시작 중...', 'info');
+      showToast(t('toast.gpuRestart'), 'info');
       await window.electronAPI.appRestart();
     } else {
-      showToast('설정 저장됨', 'success');
+      showToast(t('toast.settingsSaved'), 'success');
       modal.remove();
     }
   };
-  const closeBtn = document.createElement('button'); closeBtn.textContent='닫기'; closeBtn.onclick = () => modal.remove();
+  const closeBtn = document.createElement('button'); closeBtn.textContent = t('close'); closeBtn.onclick = () => modal.remove();
   actions.appendChild(closeBtn); actions.appendChild(restartBtn);
   body.appendChild(actions);
 
@@ -368,6 +491,8 @@ function updateCurrentChannelDisplay() {
   try {
     const el = document.getElementById('currentChannelDisplay');
     if (!el) return;
+    // main 화면에서는 재생 중 표시를 숨깁니다.
+    if (sidebarView === 'main') { el.textContent = ''; return; }
     if (!currentPlayingUrl) { el.textContent = ''; return; }
     const info = getChannelInfoByUrl(currentPlayingUrl);
     el.textContent = info ? `재생: ${info.name || info.group || ''}` : `재생 중: ${currentPlayingUrl}`;
@@ -379,32 +504,32 @@ async function showUrlModal() {
   modal.style.position = 'fixed'; modal.style.left = 0; modal.style.top = 0; modal.style.right = 0; modal.style.bottom = 0; modal.style.zIndex='10000';
   modal.style.display='flex'; modal.style.alignItems='center'; modal.style.justifyContent='center'; modal.style.background='rgba(0,0,0,0.6)';
   const body = document.createElement('div'); body.style.background='var(--card)'; body.style.padding='18px'; body.style.borderRadius='8px'; body.style.width='520px'; body.style.border='1px solid var(--border)';
-  const title = document.createElement('h3'); title.textContent='URL 불러오기'; title.style.margin='0 0 12px 0'; body.appendChild(title);
+  const title = document.createElement('h3'); title.textContent = t('loadUrl'); title.style.margin='0 0 12px 0'; body.appendChild(title);
 
-  // show current playing info
+  // show current playing status (without URL detail)
   const curDiv = document.createElement('div'); curDiv.style.marginBottom='8px'; curDiv.style.color='var(--text-muted)';
   const info = getChannelInfoByUrl(currentPlayingUrl);
-  curDiv.textContent = info ? `현재 재생: ${info.name || info.group || ''} (${info.group||''})` : (currentPlayingUrl ? `현재 재생 URL: ${currentPlayingUrl}` : '현재 재생 없음');
+  curDiv.textContent = info ? `${t('currentPlaying')}: ${info.name || info.group || ''}` : t('currentPlaying') + ' ' + t('none');
   body.appendChild(curDiv);
 
-  const urlInput = document.createElement('input'); urlInput.placeholder='URL 입력'; urlInput.style.width='100%'; urlInput.style.marginBottom='8px'; body.appendChild(urlInput);
-  const nameInput = document.createElement('input'); nameInput.placeholder='이름 (선택)'; nameInput.style.width='100%'; nameInput.style.marginBottom='8px'; body.appendChild(nameInput);
-  const epgUrlInput = document.createElement('input'); epgUrlInput.placeholder='EPG URL (선택)'; epgUrlInput.style.width='100%'; epgUrlInput.style.marginBottom='8px'; body.appendChild(epgUrlInput);
-  const addBtn = document.createElement('button'); addBtn.textContent='불러오기'; addBtn.className='primary'; addBtn.style.width='100%';
+  const urlInput = document.createElement('input'); urlInput.placeholder = t('url'); urlInput.style.width='100%'; urlInput.style.marginBottom='8px'; body.appendChild(urlInput);
+  const nameInput = document.createElement('input'); nameInput.placeholder = t('name'); nameInput.style.width='100%'; nameInput.style.marginBottom='8px'; body.appendChild(nameInput);
+  const epgUrlInput = document.createElement('input'); epgUrlInput.placeholder = t('epgUrl'); epgUrlInput.style.width='100%'; epgUrlInput.style.marginBottom='8px'; body.appendChild(epgUrlInput);
+  const addBtn = document.createElement('button'); addBtn.textContent = t('load'); addBtn.className='primary'; addBtn.style.width='100%';
   addBtn.onclick = async () => {
-    const url = urlInput.value.trim(); if (!url) return alert('URL을 입력하세요');
-    addBtn.disabled = true; addBtn.textContent = '불러오는 중...';
+    const url = urlInput.value.trim(); if (!url) return alert(t('alerts.enterUrl'));
+    addBtn.disabled = true; addBtn.textContent = t('toast.loading');
     const res = await window.electronAPI.fetchUrl(url);
-    if (!res.ok) { alert('불러오기 실패: ' + (res.error||'unknown')); addBtn.disabled=false; addBtn.textContent='불러오기'; return; }
+    if (!res.ok) { alert(t('alerts.loadFailed') + ': ' + (res.error || t('alerts.unknownError'))); addBtn.disabled=false; addBtn.textContent = t('load'); return; }
     const name = nameInput.value.trim() || url.split('/').pop() || 'playlist';
     const epgUrl = epgUrlInput.value.trim();
     const saveRes = await window.electronAPI.playlistsAdd({ name, url, epgUrl: epgUrl || undefined, content: res.content });
     if (saveRes.ok) { await loadSavedPlaylists(); render(); modal.remove(); }
-    addBtn.disabled = false; addBtn.textContent = '불러오기';
+    addBtn.disabled = false; addBtn.textContent = t('load');
   };
   body.appendChild(addBtn);
 
-  const closeBtn = document.createElement('button'); closeBtn.textContent='닫기'; closeBtn.style.marginTop='8px'; closeBtn.onclick = () => modal.remove();
+  const closeBtn = document.createElement('button'); closeBtn.textContent = t('close'); closeBtn.style.marginTop='8px'; closeBtn.onclick = () => modal.remove();
   body.appendChild(closeBtn);
   modal.appendChild(body); document.body.appendChild(modal);
 }
@@ -414,6 +539,7 @@ let editablePlaylists = [];
 
 // persistent channel search text to avoid losing input when re-rendering
 let channelFilterText = '';
+let channelFavoritesOnly = localStorage.getItem('channelFavoritesOnly') === '1';
 let _prevSearchSelectionStart = null;
 let _prevSearchSelectionEnd = null;
 let _prevSearchHadFocus = false;
@@ -1203,14 +1329,6 @@ function renderChannelScreen() {
   search.style.marginBottom = '8px';
   search.value = channelFilterText || '';
 
-  const favOnlyWrap = document.createElement('div');
-  favOnlyWrap.style.display = 'flex'; favOnlyWrap.style.alignItems = 'center'; favOnlyWrap.style.gap = '8px'; favOnlyWrap.style.marginBottom = '8px';
-  const favOnlyChk = document.createElement('input'); favOnlyChk.type = 'checkbox'; favOnlyChk.id = 'favOnlyChk';
-  const favOnlyLabel = document.createElement('label'); favOnlyLabel.htmlFor = 'favOnlyChk'; favOnlyLabel.textContent = '즐겨찾기만';
-  favOnlyWrap.appendChild(favOnlyChk); favOnlyWrap.appendChild(favOnlyLabel);
-
-  favOnlyChk.onchange = () => render();
-
   const controlsRow = document.createElement('div'); controlsRow.style.display = 'flex'; controlsRow.style.gap = '6px'; controlsRow.style.flexWrap = 'wrap';
   const exportFavBtn = document.createElement('button'); exportFavBtn.textContent = '즐겨찾기 내보내기'; exportFavBtn.style.fontSize = '11px';
   exportFavBtn.onclick = () => {
@@ -1267,7 +1385,6 @@ function renderChannelScreen() {
     }
   } catch (e) {}
   leftCol.appendChild(search);
-  leftCol.appendChild(favOnlyWrap);
   leftCol.appendChild(controlsRow);
 
   // Group selector (숨김 - 즐겨찾기 뷰일 때는 필요 없음)
@@ -1282,7 +1399,7 @@ function renderChannelScreen() {
   channelSection.style.flex = '1';
   channelSection.style.overflowY = 'auto';
 
-  renderFavoritesOrChannelList(channelSection, groupSel, favOnlyChk);
+  renderFavoritesOrChannelList(channelSection, groupSel);
 
   leftCol.appendChild(channelSection);
 
@@ -1314,7 +1431,7 @@ function renderChannelList(channelSection, groupSel, favOnlyChk) {
   const tokens = (channelFilterText || '').split(/\s+/).filter(Boolean);
   const filtered = playlistChannels.filter(c => {
     if (currentGroup !== 'All' && (c.group || 'Ungrouped') !== currentGroup) return false;
-    if (favOnlyChk && favOnlyChk.checked && !favorites.has(c.url)) return false;
+    if (channelFavoritesOnly && !favorites.has(c.url)) return false;
     if (!tokens.length) return true;
     const hay = [ (c.name||''), (c.group||''), (c.tvgId||''), (c.url||'') ].map(x => String(x).toLowerCase());
     return tokens.every(tok => hay.some(h => h.includes(tok)));
@@ -1374,13 +1491,13 @@ function renderChannelList(channelSection, groupSel, favOnlyChk) {
  * renderFavoritesOrChannelList - 즐겨찾기 또는 채널 리스트 표시
  * selectedFavoritesView가 true면 즐겨찾기 리스트, false면 채널 리스트 표시
  */
-function renderFavoritesOrChannelList(channelSection, groupSel, favOnlyChk) {
+function renderFavoritesOrChannelList(channelSection, groupSel) {
   if (selectedFavoritesView) {
     // 즐겨찾기 뷰
     renderFavoritesScreen(channelSection, groupSel);
   } else {
     // 채널 리스트 뷰 (기존 로직)
-    renderChannelList(channelSection, groupSel, favOnlyChk);
+    renderChannelList(channelSection, groupSel);
   }
 }
 
