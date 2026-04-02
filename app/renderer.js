@@ -491,12 +491,31 @@ function updateCurrentChannelDisplay() {
   try {
     const el = document.getElementById('currentChannelDisplay');
     if (!el) return;
-    // main 화면에서는 재생 중 표시를 숨깁니다.
-    if (sidebarView === 'main') { el.textContent = ''; return; }
-    if (!currentPlayingUrl) { el.textContent = ''; return; }
-    const info = getChannelInfoByUrl(currentPlayingUrl);
-    el.textContent = info ? `재생: ${info.name || info.group || ''}` : `재생 중: ${currentPlayingUrl}`;
+    // 헤더에 재생 중 표시가 나오지 않도록 빈 문자열 유지
+    el.textContent = '';
   } catch (e) {}
+}
+
+function toggleFav(ch) {
+  if (!ch || !ch.url) return;
+  try {
+    if (favorites.has(ch.url)) {
+      favorites.delete(ch.url);
+      showToast('즐겨찾기에서 제거됨', 'info');
+    } else {
+      favorites.set(ch.url, {
+        name: ch.name || ch.url,
+        group: ch.group || '',
+        tvgId: ch.tvgId || '',
+        logo: ch.logo || '',
+        addedAt: Date.now(),
+      });
+      showToast('즐겨찾기에 추가됨', 'success');
+    }
+    saveFavorites();
+  } catch (e) {
+    console.error('toggleFav error', e);
+  }
 }
 
 async function showUrlModal() {
@@ -1374,7 +1393,7 @@ function renderChannelScreen() {
   };
   controlsRow.appendChild(exportFavBtn); controlsRow.appendChild(importFavBtn); controlsRow.appendChild(saveToFileBtn); controlsRow.appendChild(loadFromFileBtn);
 
-  search.oninput = () => { channelFilterText = search.value.toLowerCase(); renderFavoritesOrChannelList(channelSection, groupSel, favOnlyChk); };
+  search.oninput = () => { channelFilterText = search.value.toLowerCase(); renderFavoritesOrChannelList(channelSection, groupSel); };
   // restore selection and focus if applicable
   try {
     if (_prevSearchHadFocus) {
