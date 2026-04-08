@@ -39,6 +39,7 @@ async function setLanguage(lang) {
   currentLanguage = lang;
   await loadTranslations(lang);
   updateUIText();
+  render();
 }
 
 function updateUIText() {
@@ -48,13 +49,16 @@ function updateUIText() {
   document.getElementById('settingsBtn').textContent = t('settings');
   document.getElementById('openBtn').textContent = t('addPlaylist');
 
+  const sidebarToggle = document.getElementById('sidebarToggleFixed');
+  if (sidebarToggle) sidebarToggle.title = t('sidebarToggle');
+
   // Update sidebar if visible
   updateSidebarText();
 }
 
 function updateSidebarText() {
   // This will be called when sidebar content changes
-  const searchInput = document.querySelector('input[placeholder*="검색"]');
+  const searchInput = document.querySelector('input[placeholder*="검색"], input[placeholder*="Search"]');
   if (searchInput) searchInput.placeholder = t('search');
 
   const groupSelect = document.querySelector('select');
@@ -110,11 +114,11 @@ let selectedFavoritesView = false; // true = 즐겨찾기 뷰
 
 function ensureFixedSidebarToggle() {
   if (typeof document === 'undefined') return null;
-  let t = document.getElementById('sidebarToggleFixed');
-  if (!t) {
-    t = document.createElement('button');
-    t.id = 'sidebarToggleFixed';
-    t.className = 'sidebar-toggle-fixed';
+  let btn = document.getElementById('sidebarToggleFixed');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'sidebarToggleFixed';
+    btn.className = 'sidebar-toggle-fixed';
     // inject minimal styles once
     if (!document.getElementById('sidebarToggleFixedStyles')) {
       const style = document.createElement('style');
@@ -127,13 +131,13 @@ function ensureFixedSidebarToggle() {
       `;
       document.head.appendChild(style);
     }
-    document.body.appendChild(t);
+    document.body.appendChild(btn);
   }
-  t.innerHTML = sidebarHidden ? '&#9654;' : '&#9664;';
-  t.title = sidebarHidden ? '사이드바 열기' : '사이드바 숨기기';
+  btn.innerHTML = sidebarHidden ? '&#9654;' : '&#9664;';
+  btn.title = t('sidebarToggle');
   // add pulse when visible to draw attention
-  if (!sidebarHidden) t.classList.add('pulse'); else t.classList.remove('pulse');
-  t.onclick = () => {
+  if (!sidebarHidden) btn.classList.add('pulse'); else btn.classList.remove('pulse');
+  btn.onclick = () => {
     // Toggle state and update layout in-place to avoid re-creating the video element
     sidebarHidden = !sidebarHidden;
     localStorage.setItem('sidebarHidden', sidebarHidden ? '1' : '0');
@@ -282,7 +286,7 @@ async function showSettingsModal() {
     const option = document.createElement('option');
     option.value = opt.value;
     option.textContent = opt.text;
-    if (localStorage.getItem('language') === opt.value) option.selected = true;
+    if (currentLanguage === opt.value) option.selected = true;
     langSelect.appendChild(option);
   });
   langRow.appendChild(langLabel); langRow.appendChild(langSelect);
@@ -294,8 +298,8 @@ async function showSettingsModal() {
     try {
       // request main to open userData folder so user can delete Cache manually
       await window.electronAPI.playlistsOpenBackupDir();
-      showToast('백업 폴더 열기 (캐시 수동 삭제 가능)', 'info');
-    } catch (e) { showToast('폴더 열기 실패', 'error'); }
+      showToast(t('backupDirOpened'), 'info');
+    } catch (e) { showToast(t('openFolderFailed', '폴더 열기 실패'), 'error'); }
   };
   cacheRow.appendChild(clearCacheBtn);
   body.appendChild(cacheRow);
@@ -385,8 +389,8 @@ async function showSettingsModal() {
   const bufferRow = document.createElement('div'); bufferRow.style.display='flex'; bufferRow.style.alignItems='center'; bufferRow.style.gap='8px'; bufferRow.style.marginTop='8px';
   const bufferModeSelect = document.createElement('select'); bufferModeSelect.style.width='80px';
   const bufferOptions = [
-    { value: 'auto', text: '자동' },
-    { value: 'manual', text: '수동' }
+    { value: 'auto', text: t('auto') },
+    { value: 'manual', text: t('manual') }
   ];
   bufferOptions.forEach(opt => {
     const option = document.createElement('option');
@@ -418,7 +422,7 @@ async function showSettingsModal() {
     if (localStorage.getItem('externalPlayerType') === opt.value || (!localStorage.getItem('externalPlayerType') && opt.value === 'vlc')) option.selected = true;
     playerSelect.appendChild(option);
   });
-  const playerPathInput = document.createElement('input'); playerPathInput.type='text'; playerPathInput.placeholder='플레이어 경로 (선택)'; playerPathInput.style.width='200px'; playerPathInput.value = localStorage.getItem('externalPlayerPath') || '';
+  const playerPathInput = document.createElement('input'); playerPathInput.type='text'; playerPathInput.placeholder = t('playerPathPlaceholder', '플레이어 경로 (선택)'); playerPathInput.style.width='200px'; playerPathInput.value = localStorage.getItem('externalPlayerPath') || '';
   externalRow.appendChild(externalChk); externalRow.appendChild(externalLabel); externalRow.appendChild(playerSelect); externalRow.appendChild(playerPathInput);
   body.appendChild(externalRow);
 
@@ -870,13 +874,13 @@ function renderMainScreen() {
   savedDiv.style.overflowY = 'auto';
 
   const savedTitle = document.createElement('strong');
-  savedTitle.textContent = `재생목록 (${savedPlaylists.length})`;
+  savedTitle.textContent = `${t('playlists', '재생목록')} (${savedPlaylists.length})`;
   savedTitle.style.display = 'block';
   savedTitle.style.marginBottom = '8px';
   savedDiv.appendChild(savedTitle);
 
   const editToggle = document.createElement('button');
-  editToggle.textContent = editMode ? '완료' : '편집';
+  editToggle.textContent = editMode ? t('done', '완료') : t('edit', '편집');
   editToggle.style.width = '100%';
   editToggle.style.marginBottom = '8px';
   editToggle.onclick = async () => {
@@ -933,7 +937,7 @@ function renderMainScreen() {
         render();
       };
       const externalLabel = document.createElement('label');
-      externalLabel.textContent = '외부 플레이어만 사용';
+      externalLabel.textContent = t('externalPlayerOnly', '외부 플레이어만 사용');
       externalLabel.style.fontSize = '10px';
       externalLabel.style.color = 'var(--text-muted)';
       externalDiv.appendChild(externalChk);
@@ -956,7 +960,7 @@ function renderMainScreen() {
       actionDiv.style.justifyContent = 'space-between';
 
       const playBtn = document.createElement('button');
-      playBtn.textContent = '채널 보기';
+      playBtn.textContent = t('channels', '채널 보기');
       playBtn.style.padding = '6px 10px';
       playBtn.style.fontSize = '11px';
       playBtn.style.flex = '1';
@@ -982,7 +986,7 @@ function renderMainScreen() {
       };
       const refreshBtn = document.createElement('button');
       refreshBtn.textContent = '🔄';
-      refreshBtn.title = 'URL에서 갱신';
+      refreshBtn.title = t('refreshFromUrl', 'URL에서 갱신');
       refreshBtn.style.padding = '6px 8px';
       refreshBtn.style.fontSize = '11px';
       refreshBtn.style.flex = '0';
@@ -1173,12 +1177,12 @@ function renderMainScreen() {
   favTitleRow.style.marginBottom = '8px';
   
   const favTitle = document.createElement('strong');
-  favTitle.textContent = `즐겨찾기 (${favorites.size})`;
+  favTitle.textContent = `${t('favorites', '즐겨찾기')} (${favorites.size})`;
   favTitle.style.flex = '1';
   favTitleRow.appendChild(favTitle);
   
   const favManageBtn = document.createElement('button');
-  favManageBtn.textContent = '👁️ 보기';
+  favManageBtn.textContent = t('viewFavorites', '👁️ 보기');
   favManageBtn.style.padding = '4px 8px';
   favManageBtn.style.fontSize = '11px';
   favManageBtn.style.background = 'var(--primary)';
@@ -1315,7 +1319,7 @@ function renderChannelScreen() {
   headerDiv.style.marginBottom = '12px';
 
   const backBtn = document.createElement('button');
-  backBtn.textContent = '← 뒤로';
+  backBtn.textContent = t('back', '← 뒤로');
   backBtn.style.padding = '6px 10px';
   backBtn.style.fontSize = '11px';
   backBtn.onclick = () => {
@@ -1344,12 +1348,12 @@ function renderChannelScreen() {
   const search = document.createElement('input');
   search.id = 'channelSearchInput';
   search.type = 'text';
-  search.placeholder = '🔍 채널 검색 (이름, 그룹, TVG, URL 등)';
+  search.placeholder = t('searchPlaceholder', '🔍 채널 검색 (이름, 그룹, TVG, URL 등)');
   search.style.marginBottom = '8px';
   search.value = channelFilterText || '';
 
   const controlsRow = document.createElement('div'); controlsRow.style.display = 'flex'; controlsRow.style.gap = '6px'; controlsRow.style.flexWrap = 'wrap';
-  const exportFavBtn = document.createElement('button'); exportFavBtn.textContent = '즐겨찾기 내보내기'; exportFavBtn.style.fontSize = '11px';
+  const exportFavBtn = document.createElement('button'); exportFavBtn.textContent = t('exportFavorites', '즐겨찾기 내보내기'); exportFavBtn.style.fontSize = '11px';
   exportFavBtn.onclick = () => {
     try {
       const data = JSON.stringify(Object.fromEntries(favorites), null, 2);
@@ -1359,7 +1363,7 @@ function renderChannelScreen() {
       setTimeout(() => URL.revokeObjectURL(url), 2000);
     } catch (e) { showToast('내보내기 실패', 'error'); }
   };
-  const saveToFileBtn = document.createElement('button'); saveToFileBtn.textContent = '파일에 저장'; saveToFileBtn.style.fontSize = '11px';
+  const saveToFileBtn = document.createElement('button'); saveToFileBtn.textContent = t('saveToFile'); saveToFileBtn.style.fontSize = '11px';
   saveToFileBtn.onclick = async () => {
     try {
       const obj = Object.fromEntries(favorites);
@@ -1367,7 +1371,7 @@ function renderChannelScreen() {
       if (r && r.ok) showToast('파일에 저장됨', 'success'); else showToast('파일 저장 실패', 'error');
     } catch (e) { showToast('파일 저장 실패', 'error'); }
   };
-  const loadFromFileBtn = document.createElement('button'); loadFromFileBtn.textContent = '파일에서 불러오기'; loadFromFileBtn.style.fontSize = '11px';
+  const loadFromFileBtn = document.createElement('button'); loadFromFileBtn.textContent = t('loadFromFile'); loadFromFileBtn.style.fontSize = '11px';
   loadFromFileBtn.onclick = async () => {
     try {
       const r = await window.electronAPI.favoritesLoadFile();
@@ -1378,7 +1382,7 @@ function renderChannelScreen() {
       } else if (r && r.canceled) { /* user cancelled */ } else { showToast('파일 불러오기 실패', 'error'); }
     } catch (e) { showToast('파일 불러오기 실패', 'error'); }
   };
-  const importFavBtn = document.createElement('button'); importFavBtn.textContent = '즐겨찾기 가져오기'; importFavBtn.style.fontSize = '11px';
+  const importFavBtn = document.createElement('button'); importFavBtn.textContent = t('importFavorites', '즐겨찾기 가져오기'); importFavBtn.style.fontSize = '11px';
   importFavBtn.onclick = () => {
     const input = document.createElement('input'); input.type = 'file'; input.accept = '.json,application/json';
     input.onchange = async (ev) => {
@@ -1437,11 +1441,11 @@ function renderChannelScreen() {
 
 function renderChannelList(channelSection, groupSel, favOnlyChk) {
   // Update group selector
-  const groups = ['All', ...Array.from(new Set(playlistChannels.map(c => c.group || 'Ungrouped'))).sort()];
+  const groups = ['All', ...Array.from(new Set(playlistChannels.map(c => c.group || t('ungrouped', 'Ungrouped')))).sort()];
   groupSel.innerHTML = '';
   groups.forEach(g => {
     const opt = document.createElement('option');
-    opt.value = g; opt.textContent = g;
+    opt.value = g; opt.textContent = g === 'All' ? t('all') : g;
     if (g === currentGroup) opt.selected = true;
     groupSel.appendChild(opt);
   });
@@ -1460,7 +1464,7 @@ function renderChannelList(channelSection, groupSel, favOnlyChk) {
   channelSection.innerHTML = '';
   if (playlistChannels.length > 0) {
     const channelCountTitle = document.createElement('strong');
-    channelCountTitle.textContent = `채널 (${filtered.length}/${playlistChannels.length})`;
+    channelCountTitle.textContent = `${t('channels', '채널')} (${filtered.length}/${playlistChannels.length})`;
     channelCountTitle.style.display = 'block';
     channelCountTitle.style.marginBottom = '8px';
     channelSection.appendChild(channelCountTitle);
@@ -1489,7 +1493,7 @@ function renderChannelList(channelSection, groupSel, favOnlyChk) {
       title.innerHTML = highlightMatch(ch.name || '');
       const meta = document.createElement('div');
       meta.className = 'meta';
-      meta.textContent = (ch.group || 'Ungrouped') + (ch.tvgId ? ' • ' + ch.tvgId : '');
+      meta.textContent = (ch.group || t('ungrouped', 'Ungrouped')) + (ch.tvgId ? ' • ' + ch.tvgId : '');
       infoWrap.appendChild(title); infoWrap.appendChild(meta);
       el.appendChild(infoWrap);
 
@@ -1527,7 +1531,7 @@ function renderFavoritesScreen(channelSection, groupSel) {
   // 즐겨찾기를 그룹화
   const favMap = new Map();
   Array.from(favorites.entries()).forEach(([url, info]) => {
-    const group = info.group || '즐겨찾기';
+    const group = info.group || t('favorites', '즐겨찾기');
     if (!favMap.has(group)) favMap.set(group, []);
     favMap.get(group).push({ url, ...info });
   });
@@ -1536,7 +1540,7 @@ function renderFavoritesScreen(channelSection, groupSel) {
   groupSel.innerHTML = '';
   const optAll = document.createElement('option');
   optAll.value = 'All';
-  optAll.textContent = `All (${favorites.size})`;
+  optAll.textContent = `${t('all')} (${favorites.size})`;
   groupSel.appendChild(optAll);
 
   Array.from(favMap.keys()).sort().forEach(group => {
@@ -1568,7 +1572,7 @@ function renderFavoritesScreen(channelSection, groupSel) {
   // 즐겨찾기 표시
   if (favorites.size > 0) {
     const favCountTitle = document.createElement('strong');
-    favCountTitle.textContent = `즐겨찾기 (${filtered.length}/${favorites.size})`;
+    favCountTitle.textContent = `${t('favorites', '즐겨찾기')} (${filtered.length}/${favorites.size})`;
     favCountTitle.style.display = 'block';
     favCountTitle.style.marginBottom = '8px';
     channelSection.appendChild(favCountTitle);
@@ -1623,7 +1627,7 @@ function renderFavoritesScreen(channelSection, groupSel) {
     });
   } else {
     const emptyMsg = document.createElement('div');
-    emptyMsg.textContent = '즐겨찾기가 없습니다';
+    emptyMsg.textContent = t('noFavorites', '즐겨찾기가 없습니다');
     emptyMsg.style.padding = '16px';
     emptyMsg.style.textAlign = 'center';
     emptyMsg.style.color = 'var(--text-muted)';
