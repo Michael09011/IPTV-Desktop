@@ -83,9 +83,9 @@ npm run dist:win          # Windows 빌드
 
 ```
 dist/
-├── IPTV-Desktop Setup 0.1.0.exe      (NSIS 설치 프로그램)
-├── IPTV-Desktop-Portable.exe         (포터블 버전)
-└── IPTV-Desktop 0.1.0.exe           (독립형 실행 파일)
+├── Vidlync Setup 0.1.0.exe      (NSIS 설치 프로그램)
+├── Vidlync-Portable.exe         (포터블 버전)
+└── Vidlync 0.1.0.exe           (독립형 실행 파일)
 ```
 
 ## 📋 플랫폼별 빌드 명령

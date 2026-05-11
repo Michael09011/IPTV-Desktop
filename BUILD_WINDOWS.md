@@ -64,9 +64,9 @@ npm run dist
 빌드 완료 후 `dist/` 디렉토리에서 다음 파일들을 확인할 수 있습니다:
 
 ### Windows
-- `IPTV-Desktop Setup 0.1.0.exe` - NSIS 설치 프로그램
-- `IPTV-Desktop-Portable.exe` - 포터블 실행 파일
-- `IPTV-Desktop 0.1.0.exe` - 독립형 실행 파일
+- `Vidlync Setup 0.1.0.exe` - NSIS 설치 프로그램
+- `Vidlync-Portable.exe` - 포터블 실행 파일
+- `Vidlync 0.1.0.exe` - 독립형 실행 파일
 
 ## 설정 설명
 

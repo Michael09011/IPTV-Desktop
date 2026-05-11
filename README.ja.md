@@ -1,4 +1,4 @@
-# IPTV-Desktop App v0.1.3 - Cross Platform (Mac OS, Win OS)
+# Vidlync App v0.1.3 - Cross Platform (Mac OS, Win OS)
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://shields.io/)
 [![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows-blue.svg)](https://github.com)
@@ -8,13 +8,13 @@
 [![VS Code](https://img.shields.io/badge/VS%20Code-007ACC?style=flat-square&logo=visual-studio-code&logoColor=white)](https://code.visualstudio.com/)
 [![GitHub Copilot](https://img.shields.io/badge/GitHub%20Copilot-000000?style=flat-square&logo=github&logoColor=white)](https://github.com/features/copilot)
 [![MPV Support](https://img.shields.io/badge/mpv-player-important.svg)](https://mpv.io/)
-[![Release](https://img.shields.io/badge/release-download-brightgreen.svg)](https://github.com/Michael09011/IPTV-Desktop/releases/tag/IPTV-Desktop)
+[![Release](https://img.shields.io/badge/release-download-brightgreen.svg)](https://github.com/Michael09011/Vidlync/releases/tag/Vidlync)
 [![Mobile App](https://img.shields.io/badge/Mobile%20App-View%20on%20GitHub-blue)](https://github.com/Michael09011/IPTV-Mobile-APP)
 
-<img width="200" height="200" alt="IPTV-Desktop アプリアイコン" src="build/icon.png" />
+<img width="200" height="200" alt="Vidlync アプリアイコン" src="build/icon.png" />
 <img width="1312" height="912" alt="スクリーンショット 2026-04-01 01 47 51" src="https://github.com/user-attachments/assets/d8b2f587-ba36-4f0e-9dbb-108817317797" />
 
-ElectronベースのIPTVデスクトップアプリ（プレイリスト読み込み、チャンネル再生、MPV/VLCプレイヤーサポート、EPG、自動バックアップ、日本放送サポートなど）。
+ElectronベースのVidlyncデスクトップアプリ（プレイリスト読み込み、チャンネル再生、MPV/VLCプレイヤーサポート、EPG、自動バックアップ、日本放送サポートなど）。
 
 ## 🏗️ 技術スタック
 
@@ -73,7 +73,7 @@ ElectronベースのIPTVデスクトップアプリ（プレイリスト読み�
 
 最新リリースをダウンロードしてください:
 
-🔗 **[リリースページへ移動](https://github.com/Michael09011/IPTV-Desktop/releases/tag/IPTV-Desktop)**
+🔗 **[リリースページへ移動](https://github.com/Michael09011/Vidlync/releases/tag/Vidlync)**
 
 - 🍎 **macOS**: DMGファイル
 - 🪟 **Windows**: NSISインストーラー
@@ -117,15 +117,15 @@ ElectronベースのIPTVデスクトップアプリ（プレイリスト読み�
 - インストーラー（NSIS）+ ポータブル
   ```bash
   npm run dist:win
-  # 結果: dist/IPTV-Desktop Setup 0.1.0.exe
-  #         dist/IPTV-Desktop-Portable.exe
+  # 結果: dist/Vidlync Setup 0.1.0.exe
+  #         dist/Vidlync-Portable.exe
   ```
 
 ### 🍎 macOS（build toolはmacOSで実行する必要があります）
 - デフォルトDMG（x64）
   ```bash
   npm run dist:mac
-  # 結果: dist/IPTV-Desktop-Mac-0.1.0.dmg
+  # 結果: dist/Vidlync-Mac-0.1.0.dmg
   ```
 - Universal（x64 + arm64）
   ```bash
@@ -139,9 +139,9 @@ ElectronベースのIPTVデスクトップアプリ（プレイリスト読み�
   ```
 
 ## 🔍 アプリ実行 / 検査
-- DMG開く（インストールウィンドウ）: `open dist/IPTV-Desktop-0.1.0.dmg`
-- .app直接実行: `open dist/IPTV-Desktop.app`
-- アプリ内部リソース確認: `ls -la dist/IPTV-Desktop.app/Contents/Resources/app`
+- DMG開く（インストールウィンドウ）: `open dist/Vidlync-0.1.0.dmg`
+- .app直接実行: `open dist/Vidlync.app`
+- アプリ内部リソース確認: `ls -la dist/Vidlync.app/Contents/Resources/app`
 
 ## ⚠️ 重要動作 / 注意事項
 
@@ -225,7 +225,7 @@ WindowsでMPVプレイヤーを利用するには以下の手順に従ってく�
 2. MPVパス確認
    - `mpv.exe`位置をコピー。
    - 例: `C:\Program Files\mpv\mpv.exe`
-3. IPTV-Desktopで設定
+3. Vidlyncで設定
    - 設定ボタンクリック
    - "外部プレイヤー使用"有効化
    - 外部プレイヤーパスを`mpv.exe`パスで入力

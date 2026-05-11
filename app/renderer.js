@@ -1004,17 +1004,17 @@ function renderMainScreen() {
           const cur = await window.electronAPI.playlistsGet(p.id).catch(()=>null);
           const oldContent = cur && cur.ok && cur.playlist ? cur.playlist.content : '';
           const res = await window.electronAPI.fetchUrl(p.url);
-          if (res.ok && res.content && res.content !== oldContent) {
+          if (res.ok && res.content) {
             const upd = await window.electronAPI.playlistsAdd({ id: p.id, name: p.name, url: p.url, content: res.content, externalPlayerOnly: p.externalPlayerOnly });
             if (upd && upd.ok) {
               await loadSavedPlaylists();
-              showToast('플레이리스트 갱신됨', 'success');
+              showToast('플레이리스트 갱신 성공', 'success');
               render();
+            } else {
+              showToast('갱신 실패: ' + (upd && upd.error || 'unknown'), 'error');
             }
-          } else if (res.ok) {
-            showToast('변경사항 없음', 'info');
           } else {
-            showToast('갱신 실패: ' + (res.error||'unknown'), 'error');
+            showToast('갱신 실패: ' + (res && res.error ? res.error : 'unknown'), 'error');
           }
         } catch (err) {
           console.error('manual refresh error', err);

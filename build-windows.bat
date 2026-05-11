@@ -3,7 +3,7 @@ REM Windows 빌드 스크립트
 
 echo.
 echo =========================================
-echo   IPTV-Desktop Windows 빌드
+echo   Vidlync Windows 빌드
 echo =========================================
 echo.
 

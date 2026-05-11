@@ -22,7 +22,7 @@
 
 1. **GitHub 저장소로 이동**
    ```
-   https://github.com/YOUR_USERNAME/IPTV-Desktop
+   https://github.com/YOUR_USERNAME/Vidlync
    ```
 
 2. **Releases 탭 클릭**
@@ -32,10 +32,10 @@
 
 4. **릴리스 정보 입력**
    - Tag: `v0.1.0`
-   - Title: `IPTV-Desktop v0.1.0 - Windows/Mac 지원`
+   - Title: `Vidlync v0.1.0 - Windows/Mac 지원`
    - Description:
      ```
-     # IPTV-Desktop v0.1.0
+     # Vidlync v0.1.0
 
      ## 새로운 기능
      - ✅ Windows 크로스 플랫폼 빌드
@@ -43,8 +43,8 @@
      - ✅ 포터블 exe 지원 (설치 불필요)
 
      ## 다운로드
-     - Windows: IPTV-Desktop-Portable.exe
-     - Mac: IPTV-Desktop-0.1.0.dmg (필요시)
+     - Windows: Vidlync-Portable.exe
+     - Mac: Vidlync-0.1.0.dmg (필요시)
 
      ## 설치 방법
      다운로드 후 직접 실행하면 됩니다.
@@ -53,8 +53,8 @@
 5. **파일 업로드**
    - "Attach binaries by dropping them here or selecting them"
    - 다음 파일 선택:
-     - `dist/IPTV-Desktop-Portable.exe`
-     - (Mac 빌드 있으면) `dist/IPTV-Desktop-0.1.0.dmg`
+     - `dist/Vidlync-Portable.exe`
+     - (Mac 빌드 있으면) `dist/Vidlync-0.1.0.dmg`
 
 6. **"Publish release" 클릭**
 
@@ -69,9 +69,9 @@ gh auth login
 
 # 릴리스 생성
 gh release create v0.1.0 \
-  --title "IPTV-Desktop v0.1.0" \
+  --title "Vidlync v0.1.0" \
   --notes "Windows 크로스 플랫폼 빌드 지원" \
-  dist/IPTV-Desktop-Portable.exe
+  dist/Vidlync-Portable.exe
 ```
 
 #### 방법 3: 자동 배포 설정 (GitHub Actions)
