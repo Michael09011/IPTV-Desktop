@@ -17,7 +17,6 @@
   <img width="200" height="200" alt="Vidlync App Icon" src="build/icon.png" />
 </p>
 
-<img width="1312" height="912" alt="Screenshot 2026-04-01 1:47:51 AM" src="https://github.com/user-attachments/assets/d8b2f587-ba36-4f0e-9dbb-108817317797" />
 
 Electron-based Vidlync desktop app (playlist loading, channel playback, MPV/VLC player support, EPG, auto backup, Japanese broadcast support, etc.).
 
