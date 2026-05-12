@@ -13,7 +13,11 @@
 [![Korean](https://img.shields.io/badge/Korean-README-blue)](README.ko.md)
 [![Japanese](https://img.shields.io/badge/Japanese-README-blue)](README.ja.md)
 
-<img width="200" height="200" alt="Vidlync App Icon" src="build/icon.png" />
+<p align="center">
+  <img width="200" height="200" alt="Vidlync App Icon" src="build/icon.png" />
+</p>
+
+<img width="1312" height="912" alt="Screenshot 2026-04-01 1:47:51 AM" src="https://github.com/user-attachments/assets/d8b2f587-ba36-4f0e-9dbb-108817317797" />
 
 Electron-based Vidlync desktop app (playlist loading, channel playback, MPV/VLC player support, EPG, auto backup, Japanese broadcast support, etc.).
 
@@ -61,14 +65,7 @@ Electron-based Vidlync desktop app (playlist loading, channel playback, MPV/VLC 
 
 ## 🎨 App Icon
 
-App icons are read from `build/icon.ico` (Windows) and `build/icon.icns` (macOS). To generate a default TV-style icon automatically, run `python generate_icon.py` (requires `pip install pillow`).
-
-To create icons manually:
-1. Draw a TV silhouette in PNG format (1024×1024px or larger).
-2. For `.ico`: Use [icoconvert.com](https://icoconvert.com/) or ImageMagick/`convert`. For `.icns`: Use macOS `iconutil`.
-3. Place generated files in `build/` and commit; they will be included in builds automatically.
-
-> Build settings already point to `build/icon.ico` and `build/icon.icns` in `package.json`.
+Refer to [Build Guide](BUILD_GUIDE.md) for icon generation details.
 
 ## 📥 Download
 
@@ -90,59 +87,7 @@ Download the latest release:
    npm start
    ```
 
-3. **Settings Menu**
-   - Specify EPG URL per playlist
-   - Enable/disable EPG feature
-   - Set M3U and EPG auto-refresh intervals (6/12/24 hours)
-   - Toast notifications for auto-refresh completion/failure
-   - GPU, cache, auto backup/refresh options
-   - Network buffer: Auto/manual mode, adjust buffer length in manual mode (default 30s, recommended 60~120s)
-   - External player: Specify path for VLC or other external players (auto-detect default path, manual input possible)
-   - Language change option: Switch app UI language to Korean/English/Japanese, etc. (added in v0.1.3)
-
-3. **Platform-Specific Build Testing** (Common settings applied for Windows/macOS)
-   ```bash
-   # Windows only: NSIS installer + portable
-   npm run dist:win
-   
-   # macOS only (must run on Mac)
-   npm run dist:mac
-   
-   # Both platforms (run on Mac)
-   npm run dist:all
-   ```
-
-## 📦 Building Bundles (For Distribution)
-
-### 🪟 Windows
-- Installer (NSIS) + Portable
-  ```bash
-  npm run dist:win
-  # Output: dist/Vidlync Setup 0.1.0.exe
-  #         dist/Vidlync-Portable.exe
-  ```
-
-### 🍎 macOS (build tool must run on macOS)
-- Default DMG (x64)
-  ```bash
-  npm run dist:mac
-  # Output: dist/Vidlync-Mac-0.1.0.dmg
-  ```
-- Universal (x64 + arm64)
-  ```bash
-  npx electron-builder --mac --x64 --arm64
-  ```
-
-### 🌍 All Platforms
-- Running on macOS builds for both platforms:
-  ```bash
-  npm run dist:all
-  ```
-
-## 🔍 App Execution / Inspection
-- Open DMG (installer window): `open dist/Vidlync-0.1.0.dmg`
-- Run .app directly: `open dist/Vidlync.app`
-- Check app internal resources: `ls -la dist/Vidlync.app/Contents/Resources/app`
+For build, deployment, and detailed settings guide, refer to [Build Guide](BUILD_GUIDE.md).
 
 ## ⚠️ Important Behavior / Notes
 
@@ -157,10 +102,7 @@ Download the latest release:
 
 - **Code Signing / Notarization**
   - Current builds are not code-signed. For distribution (including outside App Store), sign with Apple Developer account's Developer ID certificate and notarize.
-  - Refer to electron-builder docs (https://www.electron.build/code-signing) for electron-builder settings and certificate preparation.
-
-## 🐛 Debugging/Logs
-- During development, check console logs in the terminal running `npm start` and developer tools (Inspect).
+  - Refer to [Build Guide](BUILD_GUIDE.md) for details.
 
 ## 📂 Project Structure
 
