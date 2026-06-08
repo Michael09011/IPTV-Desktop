@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Windows용 .ico 아이콘 생성 스크립트
-기본 색상의 IPTV-Desktop 로고 생성
+기본 색상의 Vidlync 로고 생성
 """
 
 from PIL import Image, ImageDraw

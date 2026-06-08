@@ -15,7 +15,7 @@
 
 #### NSIS 설치 프로그램
 ```
-IPTV-Desktop Setup 0.1.0.exe
+Vidlync Setup 0.1.0.exe
 ```
 - 사용자 정의 설치 경로 선택 가능
 - 바탕화면 바로가기 자동 생성
@@ -23,7 +23,7 @@ IPTV-Desktop Setup 0.1.0.exe
 
 #### 포터블 실행 파일
 ```
-IPTV-Desktop-Portable.exe
+Vidlync-Portable.exe
 ```
 - 설치 불필요
 - USB에서 직접 실행 가능
@@ -110,7 +110,7 @@ dist/
   "allowToChangeInstallationDirectory": true,
   "createDesktopShortcut": true,
   "createStartMenuShortcut": true,
-  "shortcutName": "IPTV-Desktop"
+  "shortcutName": "Vidlync"
 }
 ```
 

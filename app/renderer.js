@@ -364,7 +364,7 @@ async function showSettingsModal() {
   const githubLink = document.createElement('a'); githubLink.href='#'; githubLink.textContent = t('visitReleases'); githubLink.style.fontSize='12px'; githubLink.style.color='var(--primary)'; githubLink.style.textDecoration='none'; githubLink.style.display='block'; githubLink.style.marginTop='4px';
   githubLink.onclick = (e) => {
     e.preventDefault();
-    window.electronAPI.openExternal('https://github.com/Michael09011/IPTV-Desktop/releases');
+    window.electronAPI.openExternal('https://github.com/Michael09011/Vidlync/releases');
   };
   versionRow.appendChild(versionText);
   versionRow.appendChild(githubLink);
